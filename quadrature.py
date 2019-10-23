@@ -17,8 +17,8 @@ def gauss_lobatto(p):
             for i in range(1, p-2+1): # check the range
                 M[i-1,i] = (1./2.)*np.sqrt((i*(i+2.))/((i+1./2.)*(i+3./2.)));
                 M[i,i-1] = M[i-1,i];
-        eigvals, eigvecs = np.linalg.eig(M)
-        z[1:p] = np.sort(eigvals);
+            eigvals, eigvecs = np.linalg.eig(M)
+            z[1:p] = np.sort(eigvals);
     #compute the weights w
     w[0]   = 2./(p*(n));
     w[n-1] = w[0];
