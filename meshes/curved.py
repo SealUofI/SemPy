@@ -5,9 +5,8 @@ from math import sqrt
 from quadrature import gauss_lobatto
 from interpolation import lagrange
 
-def trapezoid():
+def trapezoid(M):
     N=1
-    M=10
     
     zn,wn=gauss_lobatto(N)
     zm,wm=gauss_lobatto(M)
