@@ -38,11 +38,15 @@ def reference_gradient(U):
         return np.dot(D,U)
     if U.ndim==2:
         assert dims[0]==dims[1]
+        nn=n*n
         V=U.reshape(n,n)
-        return np.dot(D,V),np.dot(V,D.T)
+        Ur=np.dot(D,V)
+        Us=np.dot(V,D.T)
+        return Ur.reshape((nn,)),Us.reshape((nn,))
     if U.ndim==3:
         assert dims[0]==dims[1]==dims[2]
         nn=n*n
+        nnn=nn*n
 
         V=U.reshape(n,nn)
         Ur=np.dot(D,V)
@@ -55,4 +59,4 @@ def reference_gradient(U):
         V=U.reshape(nn,n)
         Ut=np.dot(V,D.T)
 
-        return Ur,Us,Ut
+        return Ur.reshape((nnn,)),Us.reshape((nnn,)),Ut.reshape((nnn,))

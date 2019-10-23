@@ -57,5 +57,4 @@ def trapezoid(M):
     X=X.reshape((m,m,m))
     Y=Y.reshape((m,m,m))
     Z=Z.reshape((m,m,m))
-    
     return X,Y,Z
