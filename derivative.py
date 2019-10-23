@@ -1,4 +1,5 @@
 import numpy as np
+from quadrature import gauss_lobatto
 
 def lagrange(x):
     assert x.ndim==1
@@ -26,3 +27,32 @@ def lagrange(x):
         D[i,i]=0
         D[i,i]=-sum(D[i,:])
     return D
+
+def reference_gradient(U):
+    dims=U.shape
+    n=dims[0]
+
+    z,w=gauss_lobatto(n-1)
+    D=lagrange(z)
+    if U.ndim==1:
+        return np.dot(D,U)
+    if U.ndim==2:
+        assert dims[0]==dims[1]
+        V=U.reshape(n,n)
+        return np.dot(D,V),np.dot(V,D.T)
+    if U.ndim==3:
+        assert dims[0]==dims[1]==dims[2]
+        nn=n*n
+
+        V=U.reshape(n,nn)
+        Ur=np.dot(D,V)
+
+        V=U.reshape(n,n,n)
+        for i in range(n):
+            V[i,:,:]=np.dot(D,V[i,:,:])
+        Us=V
+
+        V=U.reshape(nn,n)
+        Ut=np.dot(V,D.T)
+
+        return Ur,Us,Ut
