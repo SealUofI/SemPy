@@ -60,3 +60,14 @@ def reference_gradient(U):
         Ut=np.dot(V,D.T)
 
         return Ur.reshape((nnn,)),Us.reshape((nnn,)),Ut.reshape((nnn,))
+
+def reference_gradient_transpose(Wx,Wy,Wz):
+    assert U.ndim==3
+    dims=U.shape
+    assert dims[0]==dims[1]==dims[2]
+
+    n=dims[0]
+    z,w=gauss_lobatto(n-1)
+    D=lagrange(z)
+
+    return np.dot(D.T,Wx)+np.dot(D.T,Wy)+np.dot(D.T,Wz)

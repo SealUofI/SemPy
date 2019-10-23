@@ -1,5 +1,5 @@
 import numpy as np
-from derivative import reference_gradient
+from derivative import reference_gradient,reference_gradient_transpose
 
 def geometric_factors(X,Y,Z):
     Xr,Xs,Xt=reference_gradient(X)
@@ -43,6 +43,10 @@ def geometric_factors(X,Y,Z):
 def laplace(X,Y,Z,U):
     G=geometric_factors(X,Y,Z)
     Ux,Uy,Uz=reference_gradient(U)
+
     Wx=G[0,0,:]*Ux+G[0,1,:]*Uy+G[0,2,:]*Uz
     Wy=G[1,0,:]*Ux+G[1,1,:]*Uy+G[1,2,:]*Uz
     Wz=G[2,0,:]*Ux+G[2,1,:]*Uy+G[2,2,:]*Uz
+
+    W=reference_gradient_transpose(Wx,Wy,Wz)
+    return W
