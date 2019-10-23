@@ -26,16 +26,3 @@ def lagrange(x):
         D[i,i]=0
         D[i,i]=-sum(D[i,:])
     return D
-
-
-if __name__ == '__main__':
-    from quadrature import gauss_lobatto
-    z, w   = gauss_lobatto(2)
-    D = lagrange(z);
-    print(D)
-    z, w   = gauss_lobatto(3)
-    D = lagrange(z);
-    print(D)
-    z, w   = gauss_lobatto(4)
-    D = lagrange(z);
-    print(D)
