@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 from math import sqrt
 
 from quadrature import gauss_lobatto
@@ -47,9 +46,9 @@ def trapezoid(M):
         for i in range(m):
             Y[j,i,:]=Y[j,i,:]+(Y[j,i,:]-Y[j,0,:])*(X[j,i,0]*X[j,i,0]-np.multiply(X[j,i,:],X[j,i,:]))
     
-    Jx=JJx.reshape((n,m*m))
-    Jy=JJy.reshape((n,m*m))
-    Jz=JJz.reshape((n,m*m))
+    Jx=JJx.reshape((n,mm))
+    Jy=JJy.reshape((n,mm))
+    Jz=JJz.reshape((n,mm))
     X=np.dot(J,Jx)
     Y=np.dot(J,Jy)
     Z=np.dot(J,Jz)
