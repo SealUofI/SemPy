@@ -1,10 +1,18 @@
 import numpy as np
-from derivative import reference_gradient,reference_gradient_transpose
+from sempy.derivative import reference_gradient,reference_gradient_transpose
+from sempy.quadrature import gauss_lobatto
 
-def geometric_factors(X,Y,Z):
-    Xr,Xs,Xt=reference_gradient(X)
-    Yr,Ys,Yt=reference_gradient(Y)
-    Zr,Zs,Zt=reference_gradient(Z)
+def geometric_factors(X,Y,Z,n):
+    z,w=gauss_lobatto(n-1)
+    Q=np.zeros((n*n*n,),dtype=np.float64)
+    for k in range(n):
+        for j in range(n):
+            for i in range(n):
+                Q[k*n*n+j*n+i]=z[i]*z[j]*z[k]
+
+    Xr,Xs,Xt=reference_gradient(X,n)
+    Yr,Ys,Yt=reference_gradient(Y,n)
+    Zr,Zs,Zt=reference_gradient(Z,n)
     
     J=Xr*(Ys*Zt-Yt*Zs)-Yr*(Xs*Zt-Xt*Zs)+Zr*(Xs*Yt-Ys*Xt)
     
@@ -28,25 +36,27 @@ def geometric_factors(X,Y,Z):
     G33=tx*tx+ty*ty+tz*tz
 
     G=np.zeros((3,3,G11.size))
-    G[0,0,:]=G11
-    G[0,1,:]=G12
-    G[0,2,:]=G13
-    G[1,0,:]=G12
-    G[1,1,:]=G22
-    G[1,2,:]=G23
-    G[2,0,:]=G13
-    G[2,1,:]=G23
-    G[2,2,:]=G33
+    G[0,0,:]=G11*Q
+    G[0,1,:]=G12*Q
+    G[0,2,:]=G13*Q
+    G[1,0,:]=G12*Q
+    G[1,1,:]=G22*Q
+    G[1,2,:]=G23*Q
+    G[2,0,:]=G13*Q
+    G[2,1,:]=G23*Q
+    G[2,2,:]=G33*Q
 
     return G
 
 def laplace(X,Y,Z,U):
     G=geometric_factors(X,Y,Z)
-    Ux,Uy,Uz=reference_gradient(U)
+
+    n=X.shape[0]
+    Ux,Uy,Uz=reference_gradient(U,n)
 
     Wx=G[0,0,:]*Ux+G[0,1,:]*Uy+G[0,2,:]*Uz
     Wy=G[1,0,:]*Ux+G[1,1,:]*Uy+G[1,2,:]*Uz
     Wz=G[2,0,:]*Ux+G[2,1,:]*Uy+G[2,2,:]*Uz
 
-    W=reference_gradient_transpose(Wx,Wy,Wz)
+    W=reference_gradient_transpose(Wx,Wy,Wz,n)
     return W
