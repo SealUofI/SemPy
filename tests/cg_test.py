@@ -7,9 +7,6 @@ def test_cg_2x2():
     A=A.reshape((2,2))
 
     def Ax(x):
-        assert x.ndim==1
-        assert x.size==2
-
         return np.dot(A,x)
 
     b=np.array([1.0,2.0])
@@ -24,9 +21,6 @@ def test_cg_3x3():
     A=(A+A.T)/2.0
 
     def Ax(x):
-        assert x.ndim==1
-        assert x.size==3
-
         return np.dot(A,x)
 
     b=np.array([2.0,12.0,5.0])
@@ -35,4 +29,18 @@ def test_cg_3x3():
     np_x=np.linalg.solve(A,b)
 
     assert niter<=3
+    assert np.allclose(x,np_x,atol=1e-8)
+
+def test_cg_10x10():
+    n=10
+    A=np.random.rand(n,n)
+    A=(A+A.T)/2.0
+
+    def Ax(x):
+        return np.dot(A,x)
+
+    b=np.random.rand(n)
+    x,niter=cg(Ax,b)
+
+    np_x=np.linalg.solve(A,b)
     assert np.allclose(x,np_x,atol=1e-8)
