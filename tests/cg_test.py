@@ -1,5 +1,5 @@
 import pytest
-import SemPy.iterative.cg as cg
+from sempy.iterative import cg
 
 def test_cg_2x2():
     def Ax(x):

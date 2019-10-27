@@ -1,8 +1,8 @@
 import numpy as np
-from meshes.curved import trapezoid
-from meshes.box import box01,reference
+from sempy.meshes.curved import trapezoid
+from sempy.meshes.box import box01,reference
 from mayavi import mlab
-from iterative import cg
+from sempy.iterative import cg
 
 N=20
 X,Y,Z=reference(N)

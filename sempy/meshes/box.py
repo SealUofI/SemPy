@@ -1,6 +1,6 @@
 import numpy as np
-from quadrature import gauss_lobatto
-from interpolation import lagrange
+from sempy.quadrature import gauss_lobatto
+from sempy.interpolation import lagrange
 
 def reference(M):
     x=np.array([-1.0,1.0,-1.0,1.0,-1.0,1.0,-1.0,1.0])

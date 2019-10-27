@@ -1,8 +1,8 @@
 import numpy as np
 from math import sqrt
 
-from quadrature import gauss_lobatto
-from interpolation import lagrange
+from sempy.quadrature import gauss_lobatto
+from sempy.interpolation import lagrange
 
 def trapezoid(M):
     N=1
