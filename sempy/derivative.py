@@ -29,36 +29,24 @@ def lagrange(x):
     return D
 
 def reference_gradient(U,n):
-    dims=U.shape
     z,w=gauss_lobatto(n-1)
     D=lagrange(z)
 
-    if U.ndim==1:
-        return np.dot(D,U)
-    if U.ndim==2:
-        assert dims[0]==dims[1]
-        nn=n*n
-        V=U.reshape(n,n)
-        Ur=np.dot(D,V)
-        Us=np.dot(V,D.T)
-        return Ur.reshape((nn,)),Us.reshape((nn,))
-    if U.ndim==3:
-        assert dims[0]==dims[1]==dims[2]
-        nn=n*n
-        nnn=nn*n
+    nn=n*n
+    nnn=nn*n
 
-        V=U.reshape(n,nn)
-        Ur=np.dot(D,V)
+    V=U.reshape(nn,n)
+    Ur=np.dot(V,D.T)
 
-        V=U.reshape(n,n,n)
-        for i in range(n):
-            V[i,:,:]=np.dot(D,V[i,:,:])
-        Us=V
+    V=U.reshape(n,n,n)
+    Us=np.zeros((n,n,n))
+    for i in range(n):
+        Us[i,:,:]=np.dot(D,V[i,:,:])
 
-        V=U.reshape(nn,n)
-        Ut=np.dot(V,D.T)
+    V=U.reshape(n,nn)
+    Ut=np.dot(D,V)
 
-        return Ur.reshape((nnn,)),Us.reshape((nnn,)),Ut.reshape((nnn,))
+    return Ur.reshape((nnn,)),Us.reshape((nnn,)),Ut.reshape((nnn,))
 
 def reference_gradient_transpose(Wx,Wy,Wz,n):
     z,w=gauss_lobatto(n-1)
@@ -68,15 +56,15 @@ def reference_gradient_transpose(Wx,Wy,Wz,n):
     nn=n*n
     nnn=nn*n
 
-    V=Wx.reshape(n,nn)
-    Ur=np.dot(D,V)
+    V=Wx.reshape(nn,n)
+    Ur=np.dot(V,D.T)
 
     V=Wy.reshape(n,n,n)
+    Us=np.zeros((n,n,n))
     for i in range(n):
-        V[i,:,:]=np.dot(D,V[i,:,:])
-    Us=V
+        Us[i,:,:]=np.dot(D,V[i,:,:])
 
-    V=Wz.reshape(nn,n)
-    Ut=np.dot(V,D.T)
+    V=Wz.reshape(n,nn)
+    Ut=np.dot(D,V)
 
     return Ur.reshape((nnn,))+Us.reshape((nnn,))+Ut.reshape((nnn,))

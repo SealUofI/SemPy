@@ -1,5 +1,5 @@
 import numpy as np
-from sempy.derivative import reference_gradient,reference_gradient_transpose
+from sempy.derivative import reference_gradient
 from sempy.quadrature import gauss_lobatto
 
 def geometric_factors(X,Y,Z,n):
@@ -8,12 +8,12 @@ def geometric_factors(X,Y,Z,n):
     for k in range(n):
         for j in range(n):
             for i in range(n):
-                Q[k*n*n+j*n+i]=z[i]*z[j]*z[k]
+                Q[k*n*n+j*n+i]=w[i]*w[j]*w[k]
 
     Xr,Xs,Xt=reference_gradient(X,n)
     Yr,Ys,Yt=reference_gradient(Y,n)
     Zr,Zs,Zt=reference_gradient(Z,n)
-    
+
     J=Xr*(Ys*Zt-Yt*Zs)-Yr*(Xs*Zt-Xt*Zs)+Zr*(Xs*Yt-Ys*Xt)
     
     rx=(Ys*Zt-Yt*Zs)/J
@@ -47,16 +47,3 @@ def geometric_factors(X,Y,Z,n):
     G[2,2,:]=G33*Q
 
     return G
-
-def laplace(X,Y,Z,U):
-    G=geometric_factors(X,Y,Z)
-
-    n=X.shape[0]
-    Ux,Uy,Uz=reference_gradient(U,n)
-
-    Wx=G[0,0,:]*Ux+G[0,1,:]*Uy+G[0,2,:]*Uz
-    Wy=G[1,0,:]*Ux+G[1,1,:]*Uy+G[1,2,:]*Uz
-    Wz=G[2,0,:]*Ux+G[2,1,:]*Uy+G[2,2,:]*Uz
-
-    W=reference_gradient_transpose(Wx,Wy,Wz,n)
-    return W
