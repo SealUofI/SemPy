@@ -43,4 +43,18 @@ def test_cg_10x10():
     x,niter=cg(Ax,b)
 
     np_x=np.linalg.solve(A,b)
+    assert np.allclose(x,np_x,atol=1e-10)
+
+def test_cg_20x20():
+    n=20
+    A=np.random.rand(n,n)
+    A=(A+A.T)/2.0
+
+    def Ax(x):
+        return np.dot(A,x)
+
+    b=np.random.rand(n)
+    x,niter=cg(Ax,b)
+
+    np_x=np.linalg.solve(A,b)
     assert np.allclose(x,np_x,atol=1e-8)

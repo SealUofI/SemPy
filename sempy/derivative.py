@@ -51,20 +51,19 @@ def reference_gradient(U,n):
 def reference_gradient_transpose(Wx,Wy,Wz,n):
     z,w=gauss_lobatto(n-1)
     D=lagrange(z)
-    D=D.T
 
     nn=n*n
     nnn=nn*n
 
     V=Wx.reshape(nn,n)
-    Ur=np.dot(V,D.T)
+    Ur=np.dot(V,D)
 
     V=Wy.reshape(n,n,n)
     Us=np.zeros((n,n,n))
     for i in range(n):
-        Us[i,:,:]=np.dot(D,V[i,:,:])
+        Us[i,:,:]=np.dot(D.T,V[i,:,:])
 
     V=Wz.reshape(n,nn)
-    Ut=np.dot(D,V)
+    Ut=np.dot(D.T,V)
 
     return Ur.reshape((nnn,))+Us.reshape((nnn,))+Ut.reshape((nnn,))

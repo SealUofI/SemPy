@@ -4,7 +4,7 @@ from sempy.quadrature import gauss_lobatto
 
 def geometric_factors(X,Y,Z,n):
     z,w=gauss_lobatto(n-1)
-    Q=np.zeros((n*n*n,),dtype=np.float64)
+    Q=np.ones((n*n*n,),dtype=np.float64)
     for k in range(n):
         for j in range(n):
             for i in range(n):

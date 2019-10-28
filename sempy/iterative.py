@@ -9,7 +9,7 @@ def cg(A,b,tol=1e-8):
     norm_b=np.dot(b,b)
     TOL=max(tol*tol*norm_b,tol*tol)
 
-    r=b-A(x)
+    r=b
     rdotr=np.dot(r,r)
     niter=0
 
@@ -18,7 +18,6 @@ def cg(A,b,tol=1e-8):
 
     p=r
     while niter<100 and rdotr>TOL:
-        print("niter={} r={}".format(niter,rdotr))
         Ap=A(p)
         pAp=np.dot(p,Ap)
 
@@ -30,6 +29,7 @@ def cg(A,b,tol=1e-8):
         rdotr0=rdotr
         rdotr=np.dot(r,r)
         beta=rdotr/rdotr0
+        print("niter={} r0={} r1={} alpha={} beta={} pap={}".format(niter,rdotr0,rdotr,alpha,beta,pAp))
 
         p=r+beta*p
         niter=niter+1
