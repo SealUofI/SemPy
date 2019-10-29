@@ -4,11 +4,11 @@ from sempy.quadrature import gauss_lobatto
 
 def geometric_factors(X,Y,Z,n):
     z,w=gauss_lobatto(n-1)
-    Q=np.ones((n*n*n,),dtype=np.float64)
+    B=np.ones((n*n*n,),dtype=np.float64)
     for k in range(n):
         for j in range(n):
             for i in range(n):
-                Q[k*n*n+j*n+i]=w[i]*w[j]*w[k]
+                B[k*n*n+j*n+i]=w[i]*w[j]*w[k]
 
     Xr,Xs,Xt=reference_gradient(X,n)
     Yr,Ys,Yt=reference_gradient(Y,n)
@@ -36,14 +36,14 @@ def geometric_factors(X,Y,Z,n):
     G33=tx*tx+ty*ty+tz*tz
 
     G=np.zeros((3,3,G11.size))
-    G[0,0,:]=G11*Q
-    G[0,1,:]=G12*Q
-    G[0,2,:]=G13*Q
-    G[1,0,:]=G12*Q
-    G[1,1,:]=G22*Q
-    G[1,2,:]=G23*Q
-    G[2,0,:]=G13*Q
-    G[2,1,:]=G23*Q
-    G[2,2,:]=G33*Q
+    G[0,0,:]=G11*B*J
+    G[0,1,:]=G12*B*J
+    G[0,2,:]=G13*B*J
+    G[1,0,:]=G12*B*J
+    G[1,1,:]=G22*B*J
+    G[1,2,:]=G23*B*J
+    G[2,0,:]=G13*B*J
+    G[2,1,:]=G23*B*J
+    G[2,2,:]=G33*B*J
 
-    return G
+    return G,J,B

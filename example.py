@@ -20,16 +20,8 @@ def read(fname):
 N=10
 n=N+1
 
-X,Y,Z=reference(N)
-G=geometric_factors(X,Y,Z,n)
-print(X.shape)
-
-z,w=gauss_lobatto(n-1)
-Q=np.ones((n*n*n,),dtype=np.float64)
-for k in range(n):
-    for j in range(n):
-        for i in range(n):
-            Q[k*n*n+j*n+i]=w[i]*w[j]*w[k]
+X,Y,Z=box01(N)
+G,J,B=geometric_factors(X,Y,Z,n)
 
 def mask(W):
     W=W.reshape((n,n,n))
@@ -57,14 +49,14 @@ x_analytic=np.sin(np.pi*X)*np.sin(np.pi*Y)*np.sin(np.pi*Z)
 x_analytic=x_analytic.reshape((n*n*n,))
 x_analytic=mask(x_analytic)
 
-b=3*np.pi*np.pi*np.sin(np.pi*X)*np.sin(np.pi*Y)*np.sin(np.pi*Z)
-b=b.reshape((n*n*n,))
-b=b*Q
-b=mask(b)
+b0=3*np.pi*np.pi*np.sin(np.pi*X)*np.sin(np.pi*Y)*np.sin(np.pi*Z)
+b0=b0.reshape((n*n*n,))
+b0=b0*J*B
+b0=mask(b0)
 
 #x,niter=cg(Ax,b,tol=1e-8,maxit=1000,verbose=1)
-Minv=1.0/Q
-x,niter=pcg(Ax,Minv,b,tol=1e-12,maxit=1000,verbose=1)
+Minv=1.0/(B*J)
+x,niter=pcg(Ax,Minv,b0,tol=1e-12,maxit=1000,verbose=1)
 print(np.max(np.abs(x-x_analytic)))
 
 mlab.figure()
