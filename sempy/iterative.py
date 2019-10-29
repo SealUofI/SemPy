@@ -1,6 +1,6 @@
 import numpy as np
 
-def cg(A,b,tol=1e-8):
+def cg(A,b,tol=1e-8,maxit=100,verbose=0):
     assert b.ndim==1
 
     n=b.size
@@ -13,11 +13,13 @@ def cg(A,b,tol=1e-8):
     rdotr=np.dot(r,r)
     niter=0
 
+    if verbose:
+        print('Initial rnorm={}'.format(rdotr))
     if rdotr<1.e-20:
         return x,niter
 
     p=r
-    while niter<100 and rdotr>TOL:
+    while niter<maxit and rdotr>TOL:
         Ap=A(p)
         pAp=np.dot(p,Ap)
 
@@ -29,9 +31,49 @@ def cg(A,b,tol=1e-8):
         rdotr0=rdotr
         rdotr=np.dot(r,r)
         beta=rdotr/rdotr0
-        print("niter={} r0={} r1={} alpha={} beta={} pap={}".format(niter,rdotr0,rdotr,alpha,beta,pAp))
+        if verbose:
+            print("niter={} r0={} r1={} alpha={} beta={} pap={}".format( \
+                niter,rdotr0,rdotr,alpha,beta,pAp))
 
         p=r+beta*p
+        niter=niter+1
+
+    return x,niter
+
+def pcg(A,Minv,b,tol=1e-8,maxit=100,verbose=0):
+    assert b.ndim==1
+
+    n=b.size
+    x=np.zeros((n,),dtype=np.float64)
+
+    norm_b=np.dot(b,b)
+    TOL=max(tol*tol*norm_b,tol*tol)
+
+    r=b
+    niter=0
+
+    z=Minv*r
+    rdotz=np.dot(r,z)
+
+    p=z
+    while niter<maxit and rdotz>TOL:
+        Ap=A(p)
+        pAp=np.dot(p,Ap)
+
+        alpha=rdotz/pAp
+
+        x=x+alpha*p
+        r=r-alpha*Ap
+
+        z=Minv*r
+
+        rdotz0=rdotz
+        rdotz=np.dot(r,z)
+        beta=rdotz/rdotz0
+        print("niter={} r0={} r1={} alpha={} beta={} pap={}".format( \
+            niter,rdotz0,rdotz,alpha,beta,pAp))
+
+        p=z+beta*p
         niter=niter+1
 
     return x,niter

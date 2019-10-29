@@ -5,7 +5,7 @@ from sempy.meshes.box import box01,reference
 from sempy.stiffness import geometric_factors
 from sempy.derivative import reference_gradient,reference_gradient_transpose
 from sempy.quadrature import gauss_lobatto
-from sempy.iterative import cg
+from sempy.iterative import cg,pcg
 
 from mayavi import mlab
 
@@ -22,6 +22,7 @@ n=N+1
 
 X,Y,Z=reference(N)
 G=geometric_factors(X,Y,Z,n)
+print(X.shape)
 
 z,w=gauss_lobatto(n-1)
 Q=np.ones((n*n*n,),dtype=np.float64)
@@ -61,10 +62,12 @@ b=b.reshape((n*n*n,))
 b=b*Q
 b=mask(b)
 
-x,niter=cg(Ax,b,1e-15)
+#x,niter=cg(Ax,b,tol=1e-8,maxit=1000,verbose=1)
+Minv=1.0/Q
+x,niter=pcg(Ax,Minv,b,tol=1e-12,maxit=1000,verbose=1)
 print(np.max(np.abs(x-x_analytic)))
 
-#mlab.figure()
-#mlab.points3d(X,Y,Z,(x-x_analytic).reshape((n,n,n)),scale_mode="none",scale_factor=0.1)
-#mlab.axes()
-#mlab.show()
+mlab.figure()
+mlab.points3d(X,Y,Z,(x-x_analytic).reshape((n,n,n)),scale_mode="none",scale_factor=0.1)
+mlab.axes()
+mlab.show()
