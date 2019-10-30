@@ -1,7 +1,7 @@
 import numpy as np
 
 from sempy.meshes.curved import trapezoid
-from sempy.meshes.box import box01,reference
+from sempy.meshes.box import reference,box_ab
 from sempy.stiffness import geometric_factors
 from sempy.derivative import reference_gradient,reference_gradient_transpose
 from sempy.quadrature import gauss_lobatto
@@ -9,18 +9,10 @@ from sempy.iterative import cg,pcg
 
 from mayavi import mlab
 
-def read(fname):
-    with open(fname) as f:
-        l=[]
-        lines=f.readlines()
-        for line in lines:
-            l.append(float(line))
-        return np.array(l)
-
 N=10
 n=N+1
 
-X,Y,Z=box01(N)
+X,Y,Z=box_ab(-2.,2.,N)
 G,J,B=geometric_factors(X,Y,Z,n)
 
 def mask(W):
@@ -49,14 +41,17 @@ x_analytic=np.sin(np.pi*X)*np.sin(np.pi*Y)*np.sin(np.pi*Z)
 x_analytic=x_analytic.reshape((n*n*n,))
 x_analytic=mask(x_analytic)
 
+b=Ax(x_analytic)
+b=mask(b)
+
 b0=3*np.pi*np.pi*np.sin(np.pi*X)*np.sin(np.pi*Y)*np.sin(np.pi*Z)
 b0=b0.reshape((n*n*n,))
-b0=b0*J*B
+b0=b0*B
 b0=mask(b0)
 
-#x,niter=cg(Ax,b,tol=1e-8,maxit=1000,verbose=1)
-Minv=1.0/(B*J)
-x,niter=pcg(Ax,Minv,b0,tol=1e-12,maxit=1000,verbose=1)
+x,niter=cg(Ax,b0,tol=1e-12,maxit=1000,verbose=1)
+#Minv=1.0/(B)
+#x,niter=pcg(Ax,Minv,b0,tol=1e-12,maxit=1000,verbose=1)
 print(np.max(np.abs(x-x_analytic)))
 
 mlab.figure()

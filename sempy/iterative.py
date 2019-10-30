@@ -1,6 +1,6 @@
 import numpy as np
 
-def cg(A,b,tol=1e-8,maxit=100,verbose=0):
+def cg(A,b,tol=1e-12,maxit=100,verbose=0):
     assert b.ndim==1
 
     n=b.size

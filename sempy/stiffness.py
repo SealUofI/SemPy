@@ -20,12 +20,12 @@ def geometric_factors(X,Y,Z,n):
     sx=(Yt*Zr-Yr*Zt)/J
     tx=(Yr*Zs-Ys*Zr)/J
     
-    ry=(Zt*Xs-Zs*Xt)/J
-    sy=(Zr*Xt-Zt*Xr)/J
-    ty=(Zs*Xr-Zr*Xs)/J
+    ry=-(Zt*Xs-Zs*Xt)/J
+    sy=-(Zr*Xt-Zt*Xr)/J
+    ty=-(Zs*Xr-Zr*Xs)/J
     
     rz=(Xs*Yt-Xt*Ys)/J
-    sz=(Xr*Yt-Xt*Yr)/J
+    sz=-(Xr*Yt-Xt*Yr)/J
     tz=(Xr*Ys-Xs*Yr)/J
     
     G11=rx*rx+ry*ry+rz*rz

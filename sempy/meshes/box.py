@@ -8,10 +8,16 @@ def reference(M):
     z=np.array([-1.0,-1.0,-1.0,-1.0,1.0,1.0,1.0,1.0])
     return box(x,y,z,M)
 
-def box01(M):
+def box_01(M):
     x=np.array([0.0,1.0,0.0,1.0,0.0,1.0,0.0,1.0])
     y=np.array([0.0,0.0,1.0,1.0,0.0,0.0,1.0,1.0])
     z=np.array([0.0,0.0,0.0,0.0,1.0,1.0,1.0,1.0])
+    return box(x,y,z,M)
+
+def box_ab(a,b,M):
+    x=np.array([a,b,a,b,a,b,a,b])
+    y=np.array([a,a,b,b,a,a,b,b])
+    z=np.array([a,a,a,a,b,b,b,b])
     return box(x,y,z,M)
 
 def box(x,y,z,M):
