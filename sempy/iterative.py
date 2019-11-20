@@ -52,7 +52,7 @@ def pcg(A,Minv,b,tol=1e-8,maxit=100,verbose=0):
     r=b
     niter=0
 
-    z=Minv*r
+    z=Minv(r)
     rdotz=np.dot(r,z)
 
     p=z
@@ -65,13 +65,14 @@ def pcg(A,Minv,b,tol=1e-8,maxit=100,verbose=0):
         x=x+alpha*p
         r=r-alpha*Ap
 
-        z=Minv*r
+        z=Minv(r)
 
         rdotz0=rdotz
         rdotz=np.dot(r,z)
         beta=rdotz/rdotz0
-        print("niter={} r0={} r1={} alpha={} beta={} pap={}".format( \
-            niter,rdotz0,rdotz,alpha,beta,pAp))
+        if verbose:
+            print("niter={} r0={} r1={} alpha={} beta={} pap={}".format( \
+                niter,rdotz0,rdotz,alpha,beta,pAp))
 
         p=z+beta*p
         niter=niter+1

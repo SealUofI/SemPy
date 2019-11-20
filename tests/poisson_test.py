@@ -8,9 +8,9 @@ from sempy.iterative import pcg
 
 from sempy.meshes.box import reference,box_ab
 def test_poisson_sin():
-    N=20
+    N=10
     n=N+1
-    X,Y,Z=box_ab(-2.,2.,N)
+    X,Y,Z=box_ab(0.,1.,N)
     G,J,B=geometric_factors(X,Y,Z,n)
     
     def mask(W):
@@ -41,7 +41,10 @@ def test_poisson_sin():
     b_analytic=3*np.pi*np.pi*np.sin(np.pi*X)*np.sin(np.pi*Y)*np.sin(np.pi*Z)
     b_analytic=mask(b_analytic.reshape(n*n*n,)*B*J)
     
-    Minv=1.0/(B*J)
+    Minv_=1.0/(B*J)
+    def Minv(r):
+        return Minv_*r
+
     x,niter=pcg(Ax,Minv,b_analytic,tol=1e-12,maxit=1000,verbose=0)
 
     assert np.allclose(x,x_analytic,1e-8)

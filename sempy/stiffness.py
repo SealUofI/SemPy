@@ -4,17 +4,18 @@ from sempy.quadrature import gauss_lobatto
 
 def geometric_factors(X,Y,Z,n):
     z,w=gauss_lobatto(n-1)
-    B=np.ones((n*n*n,),dtype=np.float64)
-    for k in range(n):
-        for j in range(n):
-            for i in range(n):
-                B[k*n*n+j*n+i]=w[i]*w[j]*w[k]
 
     Xr,Xs,Xt=reference_gradient(X,n)
     Yr,Ys,Yt=reference_gradient(Y,n)
     Zr,Zs,Zt=reference_gradient(Z,n)
 
     J=Xr*(Ys*Zt-Yt*Zs)-Yr*(Xs*Zt-Xt*Zs)+Zr*(Xs*Yt-Ys*Xt)
+
+    B=np.zeros((n*n*n,),dtype=np.float64)
+    for k in range(n):
+        for j in range(n):
+            for i in range(n):
+                B[k*n*n+j*n+i]=w[i]*w[j]*w[k]
     
     rx=(Ys*Zt-Yt*Zs)/J
     sx=(Yt*Zr-Yr*Zt)/J
