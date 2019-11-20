@@ -1,7 +1,7 @@
 import numpy as np
 from sempy.quadrature import gauss_lobatto
 
-def lagrange(x):
+def lagrange_derivative_matrix(x):
     assert x.ndim==1
 
     n=x.size
@@ -28,42 +28,7 @@ def lagrange(x):
         D[i,i]=-sum(D[i,:])
     return D
 
-def reference_gradient(U,n):
-    z,w=gauss_lobatto(n-1)
-    D=lagrange(z)
-
-    nn=n*n
-    nnn=nn*n
-
-    V=U.reshape(nn,n)
-    Ur=np.dot(V,D.T)
-
-    V=U.reshape(n,n,n)
-    Us=np.zeros((n,n,n))
-    for i in range(n):
-        Us[i,:,:]=np.dot(D,V[i,:,:])
-
-    V=U.reshape(n,nn)
-    Ut=np.dot(D,V)
-
-    return Ur.reshape((nnn,)),Us.reshape((nnn,)),Ut.reshape((nnn,))
-
-def reference_gradient_transpose(Wx,Wy,Wz,n):
-    z,w=gauss_lobatto(n-1)
-    D=lagrange(z)
-
-    nn=n*n
-    nnn=nn*n
-
-    V=Wx.reshape(nn,n)
-    Ur=np.dot(V,D)
-
-    V=Wy.reshape(n,n,n)
-    Us=np.zeros((n,n,n))
-    for i in range(n):
-        Us[i,:,:]=np.dot(D.T,V[i,:,:])
-
-    V=Wz.reshape(n,nn)
-    Ut=np.dot(D.T,V)
-
-    return Ur.reshape((nnn,))+Us.reshape((nnn,))+Ut.reshape((nnn,))
+def reference_derivative_matrix(p):
+    z,w=gauss_lobatto(p)
+    D=lagrange_derivative_matrix(z)
+    return D

@@ -1,14 +1,49 @@
 import numpy as np
-from sempy.derivative import reference_gradient
-from sempy.quadrature import gauss_lobatto
+from sempy.derivative import reference_derivative_matrix
 from sempy.mass import reference_mass_matrix_3D
 
-def geometric_factors(X,Y,Z,n):
-    z,w=gauss_lobatto(n-1)
+def gradient(U,n):
+    D=reference_derivative_matrix(n-1)
 
-    Xr,Xs,Xt=reference_gradient(X,n)
-    Yr,Ys,Yt=reference_gradient(Y,n)
-    Zr,Zs,Zt=reference_gradient(Z,n)
+    nn=n*n
+    nnn=nn*n
+
+    V=U.reshape(nn,n)
+    Ur=np.dot(V,D.T)
+
+    V=U.reshape(n,n,n)
+    Us=np.zeros((n,n,n))
+    for i in range(n):
+        Us[i,:,:]=np.dot(D,V[i,:,:])
+
+    V=U.reshape(n,nn)
+    Ut=np.dot(D,V)
+
+    return Ur.reshape((nnn,)),Us.reshape((nnn,)),Ut.reshape((nnn,))
+
+def gradient_transpose(Wx,Wy,Wz,n):
+    D=reference_derivative_matrix(n-1)
+
+    nn=n*n
+    nnn=nn*n
+
+    V=Wx.reshape(nn,n)
+    Ur=np.dot(V,D)
+
+    V=Wy.reshape(n,n,n)
+    Us=np.zeros((n,n,n))
+    for i in range(n):
+        Us[i,:,:]=np.dot(D.T,V[i,:,:])
+
+    V=Wz.reshape(n,nn)
+    Ut=np.dot(D.T,V)
+
+    return Ur.reshape((nnn,))+Us.reshape((nnn,))+Ut.reshape((nnn,))
+
+def geometric_factors(X,Y,Z,n):
+    Xr,Xs,Xt=gradient(X,n)
+    Yr,Ys,Yt=gradient(Y,n)
+    Zr,Zs,Zt=gradient(Z,n)
 
     J=Xr*(Ys*Zt-Yt*Zs)-Yr*(Xs*Zt-Xt*Zs)+Zr*(Xs*Yt-Ys*Xt)
 

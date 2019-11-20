@@ -2,9 +2,10 @@ import numpy as np
 
 from sempy.meshes.curved import trapezoid
 from sempy.meshes.box import reference,box_ab
+
 from sempy.stiffness import geometric_factors
-from sempy.derivative import reference_gradient,reference_gradient_transpose
-from sempy.quadrature import gauss_lobatto
+from sempy.stiffness import gradient,gradient_transpose
+
 from sempy.iterative import cg,pcg
 
 from mayavi import mlab
@@ -22,13 +23,13 @@ def mask(W):
     return W
 
 def Ax(x):
-    Ux,Uy,Uz=reference_gradient(x,n)
+    Ux,Uy,Uz=gradient(x,n)
 
     Wx=G[0,0,:]*Ux+G[0,1,:]*Uy+G[0,2,:]*Uz
     Wy=G[1,0,:]*Ux+G[1,1,:]*Uy+G[1,2,:]*Uz
     Wz=G[2,0,:]*Ux+G[2,1,:]*Uy+G[2,2,:]*Uz
 
-    W=reference_gradient_transpose(Wx,Wy,Wz,n)
+    W=gradient_transpose(Wx,Wy,Wz,n)
     W=mask(W)
     return W
 
