@@ -1,6 +1,7 @@
 import numpy as np
 from sempy.derivative import reference_gradient
 from sempy.quadrature import gauss_lobatto
+from sempy.mass import reference_mass_matrix_3D
 
 def geometric_factors(X,Y,Z,n):
     z,w=gauss_lobatto(n-1)
@@ -11,11 +12,7 @@ def geometric_factors(X,Y,Z,n):
 
     J=Xr*(Ys*Zt-Yt*Zs)-Yr*(Xs*Zt-Xt*Zs)+Zr*(Xs*Yt-Ys*Xt)
 
-    B=np.zeros((n*n*n,),dtype=np.float64)
-    for k in range(n):
-        for j in range(n):
-            for i in range(n):
-                B[k*n*n+j*n+i]=w[i]*w[j]*w[k]
+    B=reference_mass_matrix_3D(n-1)
     
     rx=(Ys*Zt-Yt*Zs)/J
     sx=(Yt*Zr-Yr*Zt)/J
