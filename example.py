@@ -12,17 +12,12 @@ from mayavi import mlab
 N=10
 n=N+1
 
-X,Y,Z=box_ab(-2.,2.,N)
+X,Y,Z=trapezoid(N)
 G,J,B=geometric_factors(X,Y,Z,n)
 
 def mask(W):
     W=W.reshape((n,n,n))
-    W[0,:,:]=0
-    W[n-1,:,:]=0
     W[:,0,:]=0
-    W[:,n-1,:]=0
-    W[:,:,0]=0
-    W[:,:,n-1]=0
     W=W.reshape((n*n*n,))
     return W
 
@@ -37,24 +32,24 @@ def Ax(x):
     W=mask(W)
     return W
 
-x_analytic=np.sin(np.pi*X)*np.sin(np.pi*Y)*np.sin(np.pi*Z)
-x_analytic=x_analytic.reshape((n*n*n,))
-x_analytic=mask(x_analytic)
+Minv=1.0/(B*J)
+def precon(r):
+    return Minv*r
 
-b=Ax(x_analytic)
-b=mask(b)
+b=np.exp(10*Y*Z)*np.sin(10*X)
+b=mask(b.reshape((n*n*n,))*B*J)
 
-b0=3*np.pi*np.pi*np.sin(np.pi*X)*np.sin(np.pi*Y)*np.sin(np.pi*Z)
-b0=b0.reshape((n*n*n,))
-b0=b0*B
-b0=mask(b0)
+tol=1.e-8
+maxit=1000
+verbose=0
 
-x,niter=cg(Ax,b0,tol=1e-12,maxit=1000,verbose=1)
-#Minv=1.0/(B)
-#x,niter=pcg(Ax,Minv,b0,tol=1e-12,maxit=1000,verbose=1)
-print(np.max(np.abs(x-x_analytic)))
+x,niter_cg =cg (Ax,       b,tol,maxit,verbose)
+x,niter_pcg=pcg(Ax,precon,b,tol,maxit,verbose)
+print("# iterations: cg {} pcg {}".format(niter_cg,niter_pcg))
 
-mlab.figure()
-mlab.points3d(X,Y,Z,(x-x_analytic).reshape((n,n,n)),scale_mode="none",scale_factor=0.1)
-mlab.axes()
-mlab.show()
+plot=0
+if plot:
+    mlab.figure()
+    mlab.points3d(X,Y,Z,(x-x_analytic).reshape((n,n,n)),scale_mode="none",scale_factor=0.1)
+    mlab.axes()
+    mlab.show()
