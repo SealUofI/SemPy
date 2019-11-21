@@ -1,6 +1,10 @@
 import numpy as np
 from sempy.quadrature import gauss_lobatto
 
+def reference_mass_matrix_1D(p):
+    z,w=gauss_lobatto(p)
+    return np.diag(w)
+
 def reference_mass_matrix_3D(p):
     z,w=gauss_lobatto(p)
 

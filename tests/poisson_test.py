@@ -3,13 +3,15 @@ import numpy as np
 
 from sempy.stiffness import geometric_factors
 from sempy.stiffness import gradient,gradient_transpose
-from sempy.quadrature import gauss_lobatto
+
 from sempy.iterative import pcg
 
 from sempy.meshes.box import reference,box_ab
+
 def test_poisson_sin():
     N=10
     n=N+1
+
     X,Y,Z=box_ab(0.,1.,N)
     G,J,B=geometric_factors(X,Y,Z,n)
     
