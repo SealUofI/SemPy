@@ -23,18 +23,16 @@ n=N+1
 X,Y,Z=reference(N)
 G,J,B=geometric_factors(X,Y,Z,n)
 
-restricted=1
-
 def fdm_d_inv(p):
     n=p+1
-
-    I=np.identity(n,dtype=np.float64)
 
     Bh=reference_mass_matrix_1D(p);
     Dh=reference_derivative_matrix(p)
     Ah=Dh.T@Bh@Dh; Ah=0.5*(Ah+Ah.T)
 
-    Rx=Ry=Rz=I[1:-1,:]
+    I=np.identity(n,dtype=np.float64)
+    Rx=Rz=I
+    Ry=I[1:,:]
 
     Ax=Rx@Ah@Rx.T; nx=Ax.shape[0]
     Ay=Ry@Ah@Ry.T; ny=Ay.shape[0]
@@ -51,19 +49,13 @@ def fdm_d_inv(p):
     Ly=Ly.real
     Lz=Lz.real
 
-    if not restricted:
-        Rx=Ry=Rz=I
-
     D=np.kron(Iz,np.kron(Iy,Lz))+np.kron(Iz,np.kron(Ly,Ix))+np.kron(Lx,np.kron(Iy,Ix))
     dinv=1.0/np.diag(D)
-    dinv[dinv>10]=0.0
 
     return Rx,Ry,Rz,Sx.real,Sy.real,Sz.real,dinv
 
 Rx,Ry,Rz,Sx,Sy,Sz,dinv=fdm_d_inv(N)
 R=np.kron(Rz,np.kron(Ry,Rx))
-print("min: {}".format(np.min(np.abs(dinv))))
-print("max: {}".format(np.max(np.abs(dinv))))
 
 def mask(W):
     W=W.reshape((n*n*n,))
