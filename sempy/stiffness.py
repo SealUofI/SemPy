@@ -1,6 +1,6 @@
 import numpy as np
+from sempy.mass import reference_mass_matrix_3d,reference_mass_matrix_2d
 from sempy.derivative import reference_derivative_matrix
-from sempy.mass import reference_mass_matrix_3D
 
 def gradient(U,n):
     D=reference_derivative_matrix(n-1)
@@ -21,6 +21,18 @@ def gradient(U,n):
 
     return Ur.reshape((nnn,)),Us.reshape((nnn,)),Ut.reshape((nnn,))
 
+def gradient_2d(U,n):
+    D=reference_derivative_matrix(n-1)
+    nn=n*n
+
+    V=U.reshape(n,n)
+    Ur=np.dot(V,D.T)
+
+    V=U.reshape(n,n)
+    Us=np.dot(D,V)
+
+    return Ur.reshape((nn,)),Us.reshape((nn,))
+
 def gradient_transpose(Wx,Wy,Wz,n):
     D=reference_derivative_matrix(n-1)
 
@@ -40,6 +52,19 @@ def gradient_transpose(Wx,Wy,Wz,n):
 
     return Ur.reshape((nnn,))+Us.reshape((nnn,))+Ut.reshape((nnn,))
 
+def gradient_transpose_2d(Wx,Wy,n):
+    D=reference_derivative_matrix(n-1)
+
+    nn=n*n
+
+    V=Wx.reshape(n,n)
+    Ur=np.dot(V,D)
+
+    V=Wy.reshape(n,n)
+    Us=np.dot(D.T,V)
+
+    return Ur.reshape((nn,))+Us.reshape((nn,))
+
 def geometric_factors(X,Y,Z,n):
     Xr,Xs,Xt=gradient(X,n)
     Yr,Ys,Yt=gradient(Y,n)
@@ -47,7 +72,7 @@ def geometric_factors(X,Y,Z,n):
 
     J=Xr*(Ys*Zt-Yt*Zs)-Yr*(Xs*Zt-Xt*Zs)+Zr*(Xs*Yt-Ys*Xt)
 
-    B=reference_mass_matrix_3D(n-1)
+    B=reference_mass_matrix_3d(n-1)
     
     rx=(Ys*Zt-Yt*Zs)/J
     sx=(Yt*Zr-Yr*Zt)/J
@@ -78,5 +103,31 @@ def geometric_factors(X,Y,Z,n):
     G[2,0,:]=G13*B*J
     G[2,1,:]=G23*B*J
     G[2,2,:]=G33*B*J
+
+    return G,J,B
+
+def geometric_factors_2d(X,Y,n):
+    Xr,Xs=gradient_2d(X,n)
+    Yr,Ys=gradient_2d(Y,n)
+
+    J=Xr*Ys-Yr*Xs
+
+    B=reference_mass_matrix_2d(n-1)
+    
+    rx=Ys/J
+    sx=-Yr/J
+    
+    ry=-Xs/J
+    sy=Xr/J
+    
+    G11=rx*rx+ry*ry
+    G12=rx*sx+ry*sy
+    G22=sx*sx+sy*sy
+
+    G=np.zeros((2,2,G11.size))
+    G[0,0,:]=G11*B*J
+    G[0,1,:]=G12*B*J
+    G[1,0,:]=G12*B*J
+    G[1,1,:]=G22*B*J
 
     return G,J,B

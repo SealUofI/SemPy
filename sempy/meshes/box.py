@@ -8,10 +8,20 @@ def reference(M):
     z=np.array([-1.0,-1.0,-1.0,-1.0,1.0,1.0,1.0,1.0])
     return box(x,y,z,M)
 
+def reference_2d(M):
+    x=np.array([-1.0,1.0,-1.0,1.0])
+    y=np.array([-1.0,-1.0,1.0,1.0])
+    return box_2d(x,y,M)
+
 def box_01(M):
     x=np.array([0.0,1.0,0.0,1.0,0.0,1.0,0.0,1.0])
     y=np.array([0.0,0.0,1.0,1.0,0.0,0.0,1.0,1.0])
     z=np.array([0.0,0.0,0.0,0.0,1.0,1.0,1.0,1.0])
+    return box(x,y,z,M)
+
+def box_01_2d(M):
+    x=np.array([0.0,1.0,0.0,1.0])
+    y=np.array([0.0,0.0,1.0,1.0])
     return box(x,y,z,M)
 
 def box_ab(a,b,M):
@@ -19,6 +29,11 @@ def box_ab(a,b,M):
     y=np.array([a,a,b,b,a,a,b,b])
     z=np.array([a,a,a,a,b,b,b,b])
     return box(x,y,z,M)
+
+def box_ab_2d(a,b,M):
+    x=np.array([a,b,a,b])
+    y=np.array([a,a,b,b])
+    return box_2d(x,y,M)
 
 def box(x,y,z,M):
     N=1
@@ -62,3 +77,28 @@ def box(x,y,z,M):
     z=Jz.reshape((m,m,m))
 
     return x,y,z
+
+def box_2d(x,y,M):
+    N=1
+    n=N+1
+    m=M+1
+
+    zn,wn=gauss_lobatto(N)
+    zm,wm=gauss_lobatto(M)
+    J=lagrange(zm,zn)
+
+    x=x.reshape((n,n))
+    y=y.reshape((n,n))
+    Jx=np.dot(x,J.T)
+    Jy=np.dot(y,J.T)
+
+    x=Jx.reshape((n,m))
+    y=Jy.reshape((n,m))
+
+    Jx=np.dot(J,x)
+    Jy=np.dot(J,y)
+
+    x=Jx.reshape((m,m))
+    y=Jy.reshape((m,m))
+
+    return x,y
