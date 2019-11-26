@@ -20,19 +20,54 @@ import matplotlib.pyplot as plt
 N=10
 n=N+1
 
-X,Y,Z=trapezoid(N)
+X,Y,Z=reference(N)
 G,J,B=geometric_factors(X,Y,Z,n)
 
+restricted=1
+
+def fdm_d_inv(p):
+    n=p+1
+
+    I=np.identity(n,dtype=np.float64)
+
+    Bh=reference_mass_matrix_1D(p);
+    Dh=reference_derivative_matrix(p)
+    Ah=Dh.T@Bh@Dh; Ah=0.5*(Ah+Ah.T)
+
+    Rx=Ry=Rz=I[1:-1,:]
+
+    Ax=Rx@Ah@Rx.T; nx=Ax.shape[0]
+    Ay=Ry@Ah@Ry.T; ny=Ay.shape[0]
+    Az=Rz@Ah@Rz.T; nz=Az.shape[0]
+    Bx=Rx@Bh@Rx.T
+    By=Ry@Bh@Ry.T
+    Bz=Rz@Bh@Rz.T
+
+    Lx,Sx=sla.eig(Ax,Bx); Lx=np.diag(Lx); Ix=np.identity(nx,dtype=np.float64)
+    Ly,Sy=sla.eig(Ay,By); Ly=np.diag(Ly); Iy=np.identity(ny,dtype=np.float64)
+    Lz,Sz=sla.eig(Az,Bz); Lz=np.diag(Lz); Iz=np.identity(nz,dtype=np.float64)
+
+    Lx=Lx.real
+    Ly=Ly.real
+    Lz=Lz.real
+
+    if not restricted:
+        Rx=Ry=Rz=I
+
+    D=np.kron(Iz,np.kron(Iy,Lz))+np.kron(Iz,np.kron(Ly,Ix))+np.kron(Lx,np.kron(Iy,Ix))
+    dinv=1.0/np.diag(D)
+    dinv[dinv>10]=0.0
+
+    return Rx,Ry,Rz,Sx.real,Sy.real,Sz.real,dinv
+
+Rx,Ry,Rz,Sx,Sy,Sz,dinv=fdm_d_inv(N)
+R=np.kron(Rz,np.kron(Ry,Rx))
+print("min: {}".format(np.min(np.abs(dinv))))
+print("max: {}".format(np.max(np.abs(dinv))))
+
 def mask(W):
-    W=W.reshape((n,n,n))
-    #W[0  ,:,:]=0
-    #W[n-1,:,:]=0
-    W[:,0  ,:]=0
-    W[:,n-1,:]=0
-    #W[:,:,0  ]=0
-    #W[:,:,n-1]=0
     W=W.reshape((n*n*n,))
-    return W
+    return np.dot(R.T,np.dot(R,W))
 
 def Ax(x):
     Ux,Uy,Uz=gradient(x,n)
@@ -49,79 +84,48 @@ Minv=1.0/(B*J)
 def precon_mass(r):
     return Minv*r
 
-def fdm_d_inv(p,restricted=False):
-    n=p+1
 
-    I=np.identity(n,dtype=np.float64)
-    if restricted:
-        Rx=Rz=I
-        Ry=I[1:-1,:]
-    else:
-        Rx=Ry=Rz=I
+def fast_kron(Sz,Sy,Sx,U):
+    nx,mx=Sx.shape
+    ny,my=Sy.shape
+    nz,mz=Sz.shape
 
-    Bh=reference_mass_matrix_1D(p);
-    Dh=reference_derivative_matrix(p)
-    Ah=Dh@Bh@Dh.T; Ah=0.5*(Ah+Ah.T)
+    U=U.reshape((my*mz,mx))
+    U=np.dot(U,Sx.T)
 
-    Ax=Rx@Ah@Rx.T; nx=Ax.shape[0]
-    Ay=Ry@Ah@Ry.T; ny=Ay.shape[0]
-    Az=Rz@Ah@Rz.T; nz=Az.shape[0]
-    Bx=Rx@Bh@Rx.T
-    By=Ry@Bh@Ry.T
-    Bz=Rz@Bh@Rz.T
+    U=U.reshape((mz,my,nx))
+    V=np.zeros ((mz,ny,nx))
+    for i in range(mz):
+        V[i,:,:]=np.dot(Sy,U[i,:,:])
 
-    Lx,Sx=sla.eig(Ax,Bx); print(Lx); Lx=np.diag(Lx); Ix=np.identity(nx,dtype=np.float64)
-    Ly,Sy=sla.eig(Ay,By); print(Ly); Ly=np.diag(Ly); Iy=np.identity(ny,dtype=np.float64)
-    Lz,Sz=sla.eig(Az,Bz); print(Lz); Lz=np.diag(Lz); Iz=np.identity(nz,dtype=np.float64)
-
-    D=np.kron(Iz,np.kron(Iy,Lx))+np.kron(Iz,np.kron(Ly,Ix))+np.kron(Lz,np.kron(Iy,Ix))
-    return Rx,Ry,Rz,Sx.real,Sy.real,Sz.real,1.0/np.diag(D)
-
-Rx,Ry,Rz,Sx,Sy,Sz,dinv=fdm_d_inv(N)
-print("min: {}".format(np.min(np.abs(dinv))))
-R=np.kron(Rz,np.kron(Ry,Rx))
-
-def fast_kron(A,B,C,U):
-    nx,mx=A.shape
-    ny,my=B.shape
-    nz,mz=C.shape
-
-    U=U.reshape(mz,mx*my)
-    U=np.dot(C,U)
-
-    U=U.reshape(mx,my,nz)
-    V=np.zeros((mx,ny,nz))
-    for i in range(mx):
-        V[i,:,:]=np.dot(B,U[i,:,:])
-
-    V=V.reshape(nz*ny,mx)
-    U=np.dot(V,A.T)
+    V=V.reshape((mz,nx*ny))
+    U=np.dot(Sz,V)
 
     return U.reshape((nx*ny*nz,))
 
 def precon_fdm(r):
-    r=R@r
+    r=np.dot(R,r)
     b=fast_kron(Sz.T,Sy.T,Sx.T,r)
     b=dinv*b
-    return R.T@fast_kron(Sz,Sy,Sx,b)
+    return np.dot(R.T,fast_kron(Sz,Sy,Sx,b))
 
 b=np.exp(10*Y*Z)*np.sin(10*X)
 b=mask(b.reshape((n*n*n,))*B*J)
 
 tol=1.e-10
-maxit=1000
+maxit=10000
 verbose=0
 
-x_cg,niter_cg   =cg (Ax,            b,tol,maxit,verbose)
-x,niter_mass    =pcg(Ax,precon_mass,b,tol,maxit,verbose)
-x_pcg,niter_fdm =pcg(Ax,precon_fdm ,b,tol,maxit,verbose)
+x_cg  ,niter_cg  =cg (Ax,            b,tol,maxit,verbose)
+x_mass,niter_mass=pcg(Ax,precon_mass,b,tol,maxit,verbose)
+x_fdm ,niter_fdm =pcg(Ax,precon_fdm ,b,tol,maxit,verbose)
 print("# iterations: cg {} pcg (mass) {} pcg (fdm) {}".format(niter_cg,
   niter_mass,niter_fdm))
 
-print("error: {}".format(np.min(np.abs(x_cg-x_pcg))))
-plot=0
+print("error: {}".format(np.max(np.abs(x_cg-x_fdm))))
+plot=1
 if plot:
     mlab.figure()
-    mlab.points3d(X,Y,Z,(x_cg-x_pcg).reshape((n,n,n)),scale_mode="none",scale_factor=0.1)
+    mlab.points3d(X,Y,Z,(x_cg-x_fdm).reshape((n,n,n)),scale_mode="none",scale_factor=0.1)
     mlab.axes()
     mlab.show()
