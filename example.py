@@ -17,8 +17,8 @@ from sempy.mass import reference_mass_matrix_1d
 from mayavi import mlab
 import matplotlib.pyplot as plt
 
-if_2d=1
-if_plot=0
+if_2d=0
+if_plot=1
 
 N=10
 n=N+1
@@ -38,16 +38,16 @@ def fdm_d_inv_2d(p):
     Ah=Dh.T@Bh@Dh; Ah=0.5*(Ah+Ah.T)
 
     I=np.identity(n,dtype=np.float64)
-    Rx=I
     Ry=I[1:,:]
+    Ry=Rx=I[1:-1,:]
 
     Ax=Rx@Ah@Rx.T; nx=Ax.shape[0]
     Ay=Ry@Ah@Ry.T; ny=Ay.shape[0]
     Bx=Rx@Bh@Rx.T
     By=Ry@Bh@Ry.T
 
-    Lx,Sx=sla.eig(Ax,Bx); Lx=np.diag(Lx); Ix=np.identity(nx,dtype=np.float64)
-    Ly,Sy=sla.eig(Ay,By); Ly=np.diag(Ly); Iy=np.identity(ny,dtype=np.float64)
+    Lx,Sx=sla.eigh(Ax,Bx); Lx=np.diag(Lx); Ix=np.identity(nx,dtype=np.float64)
+    Ly,Sy=sla.eigh(Ay,By); Ly=np.diag(Ly); Iy=np.identity(ny,dtype=np.float64)
 
     Lx=Lx.real
     Ly=Ly.real
@@ -60,7 +60,7 @@ def fdm_d_inv_2d(p):
 def fdm_d_inv(p):
     n=p+1
 
-    Bh=reference_mass_matrix_1D(p);
+    Bh=reference_mass_matrix_1d(p);
     Dh=reference_derivative_matrix(p)
     Ah=Dh.T@Bh@Dh; Ah=0.5*(Ah+Ah.T)
 
@@ -75,28 +75,22 @@ def fdm_d_inv(p):
     By=Ry@Bh@Ry.T
     Bz=Rz@Bh@Rz.T
 
-    Lx,Sx=sla.eig(Ax,Bx); Lx=np.diag(Lx); Ix=np.identity(nx,dtype=np.float64)
-    Ly,Sy=sla.eig(Ay,By); Ly=np.diag(Ly); Iy=np.identity(ny,dtype=np.float64)
-    Lz,Sz=sla.eig(Az,Bz); Lz=np.diag(Lz); Iz=np.identity(nz,dtype=np.float64)
+    Lx,Sx=sla.eigh(Ax,Bx); Lx=np.diag(Lx); Ix=np.identity(nx,dtype=np.float64)
+    Ly,Sy=sla.eigh(Ay,By); Ly=np.diag(Ly); Iy=np.identity(ny,dtype=np.float64)
+    Lz,Sz=sla.eigh(Az,Bz); Lz=np.diag(Lz); Iz=np.identity(nz,dtype=np.float64)
 
     Lx=Lx.real
     Ly=Ly.real
     Lz=Lz.real
 
-    D=np.kron(Iz,np.kron(Iy,Lz))+np.kron(Iz,np.kron(Ly,Ix))+np.kron(Lx,np.kron(Iy,Ix))
+    D=np.kron(Iz,np.kron(Iy,Lx))+np.kron(Iz,np.kron(Ly,Ix))+\
+        np.kron(Lz,np.kron(Iy,Ix))
     dinv=1.0/np.diag(D)
 
     return Rx,Ry,Rz,Sx.real,Sy.real,Sz.real,dinv
 
 def mask(W):
     return np.dot(R.T,np.dot(R,W))
-
-if if_2d:
-    Rx,Ry,Sx,Sy,dinv=fdm_d_inv_2d(N)
-    R=np.kron(Ry,Rx)
-else:
-    Rx,Ry,Rz,Sx,Sy,Sz,dinv=fdm_d_inv_2d(N)
-    R=np.kron(Rz,np.kron(Ry,Rx))
 
 def Ax_2d(x):
     Ux,Uy=gradient_2d(x,n)
@@ -151,6 +145,13 @@ def fast_kron(Sz,Sy,Sx,U):
 
     return U.reshape((nx*ny*nz,))
 
+if if_2d:
+    Rx,Ry,Sx,Sy,dinv=fdm_d_inv_2d(N)
+    R=np.kron(Ry,Rx)
+else:
+    Rx,Ry,Rz,Sx,Sy,Sz,dinv=fdm_d_inv(N)
+    R=np.kron(Rz,np.kron(Ry,Rx))
+
 def precon_fdm_2d(r):
     r=np.dot(R,r)
     b=fast_kron_2d(Sy.T,Sx.T,r)
@@ -170,8 +171,8 @@ else:
     b=np.exp(10*Y*Z)*np.sin(10*X)
     b=mask(b.reshape((n*n*n,))*B*J)
 
-tol=1.e-10
-maxit=10000
+tol=1.e-8
+maxit=1000
 verbose=0
 
 if if_2d:
