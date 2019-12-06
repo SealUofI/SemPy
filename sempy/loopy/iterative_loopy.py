@@ -16,11 +16,12 @@ queue = cl.CommandQueue(ctx)
 
 
 def cg(A,b,tol=1e-12,maxit=100,verbose=0):
-    ip = lpk.gen_inner_prod_knl(b.shape[0])
 
     assert b.ndim==1
 
     n=b.size
+
+    ip = lpk.gen_inner_prod_knl(n)
     x=np.zeros((n,),dtype=np.float64)
 
     
