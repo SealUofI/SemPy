@@ -6,6 +6,15 @@ import pyopencl.clrandom
 from loopy.version import LOOPY_USE_LANGUAGE_VERSION_2018_2
 from loopy.kernel.data import AddressSpace
 
+# setup
+# -----
+lp.set_caching_enabled(False)
+from warnings import filterwarnings, catch_warnings
+filterwarnings('error', category=lp.LoopyWarning)
+import loopy.options
+loopy.options.ALLOW_TERMINAL_COLORS = False
+
+
 import loopy_kernels as lpk
 
 platform = cl.get_platforms()
@@ -19,14 +28,18 @@ def cg(A,b,tol=1e-12,maxit=100,verbose=0):
 
     assert b.ndim==1
 
-    n=b.size
+    m,n = A.shape
 
     ip = lpk.gen_inner_prod_knl(n)
+    Ax = lpk.gen_Ax_knl(m,n)
+    #Ax = lp.set_options(Ax, "write_code")
+    print(lp.generate_code_v2(Ax).device_code())
+
     x=np.zeros((n,),dtype=np.float64)
 
     
     
-    evt, (norm_b_loopy,) = ip(queue,x=b,y=b.copy())
+    #evt, (norm_b_loopy,) = ip(queue,x=b,y=b.copy())
     #print(norm_b)
 
     norm_b=np.dot(b,b)
@@ -46,6 +59,8 @@ def cg(A,b,tol=1e-12,maxit=100,verbose=0):
     p=r
     while niter<maxit and rdotr>TOL:
         Ap=A@p
+        #(evt, result) = Ax(queue, A=A, x=p)
+
         pAp=np.dot(p,Ap)
 
         alpha=rdotr/pAp
