@@ -33,11 +33,11 @@ def gen_Ax_knl(m,n):
         """
         result[i] = sum(j,A[i,j]*x[j])
         """,
-        kernel_data = [
-            lp.GlobalArg("result", SEMPY_SCALAR, shape=(m), order="C"),
-            lp.GlobalArg("A", SEMPY_SCALAR, shape=(m,n), order="C"),
-            lp.GlobalArg("x", SEMPY_SCALAR, shape=(n,), order="C")
-        ],
+        #kernel_data = [
+        #    lp.GlobalArg("result", SEMPY_SCALAR, shape=(m), order="C"),
+        #    lp.GlobalArg("A", SEMPY_SCALAR, shape=(m,n), order="C"),
+        #    lp.GlobalArg("x", SEMPY_SCALAR, shape=(n,), order="C")
+        #],
         assumptions="n > 0 and m > 0",
         default_offset=None,
         name="Ax",
@@ -55,11 +55,11 @@ def gen_norm_knl(n):
         """
         result = sqrt(sum(i,x[i]*y[i]))
         """,
-        kernel_data = [
-            lp.ValueArg("result", SEMPY_SCALAR),
-            lp.GlobalArg("x", SEMPY_SCALAR, shape=(n,), order="C"),
-            lp.GlobalArg("y", SEMPY_SCALAR, shape=(n,), order="C")
-        ],
+        #kernel_data = [
+        #    lp.ValueArg("result", SEMPY_SCALAR),
+        #    lp.GlobalArg("x", SEMPY_SCALAR, shape=(n,), order="C"),
+        #    lp.GlobalArg("y", SEMPY_SCALAR, shape=(n,), order="C")
+        #],
         assumptions="n > 0",
         default_offset=None,
         name="norm"
@@ -76,11 +76,11 @@ def gen_inner_prod_knl(n):
         """
         result = sum(i,x[i]*y[i])
         """,
-        kernel_data = [
-            lp.ValueArg("result", SEMPY_SCALAR),
-            lp.GlobalArg("x", SEMPY_SCALAR, shape=(n,), order="C"),
-            lp.GlobalArg("y", SEMPY_SCALAR, shape=(n,), order="C")
-        ],
+        #kernel_data = [
+        #    lp.ValueArg("result", SEMPY_SCALAR),
+        #    lp.GlobalArg("x", SEMPY_SCALAR, shape=(n,), order="C"),
+        #    lp.GlobalArg("y", SEMPY_SCALAR, shape=(n,), order="C")
+        #],
         assumptions="n > 0",
         default_offset=None,
         name="inner_product"
@@ -97,18 +97,18 @@ def gen_axpy_knl(n):
         """
         result[i] = a*x[i] + y[i]
         """,
-        kernel_data = [
-            lp.GlobalArg("result", SEMPY_SCALAR, shape=(n,), order="C"),
-            lp.ValueArg("a", SEMPY_SCALAR),
-            lp.GlobalArg("x", SEMPY_SCALAR, shape=(n,), order="C"),
-            lp.GlobalArg("y", SEMPY_SCALAR, shape=(n,), order="C")
-        ],
+        #kernel_data = [
+        #    lp.GlobalArg("result", SEMPY_SCALAR, shape=(n,), order="C"),
+        #    lp.ValueArg("a", SEMPY_SCALAR),
+        #    lp.GlobalArg("x", SEMPY_SCALAR, shape=(n,), order="C"),
+        #    lp.GlobalArg("y", SEMPY_SCALAR, shape=(n,), order="C")
+        #],
         assumptions="n > 0",
         default_offset=None,
         name="axpy"
     )
 
-    knl = lp.tag_inames(knl, [("i", "g.0")])
+    #knl = lp.tag_inames(knl, [("i", "g.0")])
 
     return knl
 
@@ -121,13 +121,14 @@ if __name__ == "__main__":
     #print(inner_product)
     axpy = gen_axpy_knl(100)
     print(axpy)
-    a = 1.0
+    a = SEMPY_SCALAR(1.0)
     x = np.ones(100, SEMPY_SCALAR)
     y = np.ones(100, SEMPY_SCALAR)
     result = np.empty(100, SEMPY_SCALAR)
-    (evt, result) = axpy(queue, a=a, x=x, y=y)
+    #(evt, result) = axpy(queue, a=a, x=x, y=y)
+    print(result)
     #lp.set_options(axpy, "no_numpy")
     #lp.set_options(axpy, edit_code=True)
     #axpy = axpy.copy(target=lp.CudaTarget())
-    #axpy_code = lp.generate_code_v2(axpy).device_code()
+    axpy_code = lp.generate_code_v2(axpy).device_code()
     #print(axpy_code)
