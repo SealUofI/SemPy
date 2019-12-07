@@ -31,16 +31,16 @@ def cg(A,b,tol=1e-12,maxit=100,verbose=0):
     m,n = A.shape
 
     ip = lpk.gen_inner_prod_knl(n)
-    Ax = lpk.gen_Ax_knl(m,n)
+    #Ax = lpk.gen_Ax_knl(m,n)
     #Ax = lp.set_options(Ax, "write_code")
-    print(lp.generate_code_v2(Ax).device_code())
+    #print(lp.generate_code_v2(Ax).device_code())
 
     x=np.zeros((n,),dtype=np.float64)
 
     
     
-    #evt, (norm_b_loopy,) = ip(queue,x=b,y=b.copy())
-    #print(norm_b)
+    evt, (norm_b_loopy,) = ip(queue,x=b,y=b.copy())
+    print(norm_b_loopy)
 
     norm_b=np.dot(b,b)
     print(norm_b)
