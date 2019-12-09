@@ -6,26 +6,42 @@ import pyopencl.clrandom
 from loopy.version import LOOPY_USE_LANGUAGE_VERSION_2018_2
 from loopy.kernel.data import AddressSpace
 
-# setup
-# -----
-lp.set_caching_enabled(False)
-from warnings import filterwarnings, catch_warnings
-filterwarnings('error', category=lp.LoopyWarning)
-import loopy.options
-loopy.options.ALLOW_TERMINAL_COLORS = False
+def gen_CG_iteration():
+    knl = lp.make_kernel(
+        """
+        {[i,j,k,l]: 0<=i,j,k,l<n }
+        """,
+        """ 
+        # Calculated with some other function
+        #<> Ap[i] = sum(j, A[i,j]*p[j]) {id=Ap} 
 
-# Add to path so can import from above directory
-import sys
-sys.path.append('../')
-from sempy_types import SEMPY_SCALAR
+        <> a = rdotr_prev / sum(j, p[j]*Ap[j]) {id=a}
+        x[l] = x[l] + a*p[l] {id=x, dep=a}
+        r[l] = r[l] - a*Ap[l] {id=r, dep=a}
+        rdotr = sum(k, r[k]*r[k]) {id=rdotr, dep=r}
+        p_out[i] = r[i] + (rdotr/rdotr_prev) * p[i] {id=p, dep=rdotr}
+        """,
+        #kernel_data = [
+        #    lp.GlobalArg("result", SEMPY_SCALAR, shape=(m), order="C"),
+        #    lp.GlobalArg("A", SEMPY_SCALAR, shape=(m,n), order="C"),
+        #    lp.GlobalArg("x", SEMPY_SCALAR, shape=(n,), order="C")
+        #],
+        assumptions="n > 0",
+        default_offset=None,
+        name="cg",
+        target=lp.PyOpenCLTarget()
+    )
 
-platform = cl.get_platforms()
-my_gpu_devices = platform[0].get_devices(device_type=cl.device_type.GPU)
-#ctx = cl.Context(devices=my_gpu_devices)
-ctx = cl.create_some_context(interactive=True)
-queue = cl.CommandQueue(ctx)
+    knl = lp.make_reduction_inames_unique(knl)
+    #knl = lp.duplicate_inames(knl, "i", within="id:b0*")
+    #knl = lp.duplicate_inames(knl, "i", within="id:r")
+    #knl = lp.duplicate_inames(knl, "i", within="id:r_old")
 
-def gen_Ax_knl(m,n):
+    return knl
+
+
+
+def gen_Ax_knl():
     knl = lp.make_kernel(
         """
         {[i,j]: 0<=i<m and 0<=j<n }
@@ -47,13 +63,13 @@ def gen_Ax_knl(m,n):
     return knl
 
 
-def gen_norm_knl(n):
+def gen_norm_knl():
     knl = lp.make_kernel(
         """
         {[i]: 0<=i<n}
         """,
         """
-        result = sqrt(sum(i,x[i]*y[i]))
+        result = sum(i,x[i]*x[i])
         """,
         #kernel_data = [
         #    lp.ValueArg("result", SEMPY_SCALAR),
@@ -68,7 +84,7 @@ def gen_norm_knl(n):
     return knl
 
 
-def gen_inner_prod_knl(n):
+def gen_inner_prod_knl():
     knl = lp.make_kernel(
         """
         {[i]: 0<=i<n}
@@ -88,7 +104,7 @@ def gen_inner_prod_knl(n):
 
     return knl
 
-def gen_axpy_knl(n):
+def gen_axpy_knl():
 
     knl = lp.make_kernel(
         """
@@ -113,6 +129,28 @@ def gen_axpy_knl(n):
     return knl
 
 if __name__ == "__main__":
+    # setup
+    # -----
+    lp.set_caching_enabled(False)
+    from warnings import filterwarnings, catch_warnings
+    filterwarnings('error', category=lp.LoopyWarning)
+    import loopy.options
+    loopy.options.ALLOW_TERMINAL_COLORS = False
+
+    # Add to path so can import from above directory
+    import sys
+    sys.path.append('../')
+    from sempy_types import SEMPY_SCALAR
+
+    platform = cl.get_platforms()
+    my_gpu_devices = platform[0].get_devices(device_type=cl.device_type.GPU)
+    #ctx = cl.Context(devices=my_gpu_devices)
+    ctx = cl.create_some_context(interactive=True)
+    queue = cl.CommandQueue(ctx)
+
+
+
+    """
     #norm = gen_norm_knl(100)
     #print(norm)
     #Ax = gen_Ax_knl(100,100)
@@ -130,5 +168,17 @@ if __name__ == "__main__":
     #lp.set_options(axpy, "no_numpy")
     #lp.set_options(axpy, edit_code=True)
     #axpy = axpy.copy(target=lp.CudaTarget())
-    axpy_code = lp.generate_code_v2(axpy).device_code()
+    #axpy_code = lp.generate_code_v2(axpy).device_code()
     #print(axpy_code)
+    """
+    cg = gen_CG_iteration()
+    lp.set_options(cg, "write_code")
+    print(cg)
+    Ap = np.ones(100,dtype=SEMPY_SCALAR)
+    p = np.ones(100, dtype=SEMPY_SCALAR)
+    r = np.ones(100, dtype=SEMPY_SCALAR)
+    x = np.ones(100, dtype=SEMPY_SCALAR)
+    result = cg(queue, Ap=Ap, p=p, r=r, rdotr_prev=SEMPY_SCALAR(1.0), x=x)
+    print(result)
+    #cg_code = lp.generate_code_v2(cg).device_code()
+    #print(cg_code)

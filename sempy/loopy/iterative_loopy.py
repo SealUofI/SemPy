@@ -6,6 +6,11 @@ import pyopencl.clrandom
 from loopy.version import LOOPY_USE_LANGUAGE_VERSION_2018_2
 from loopy.kernel.data import AddressSpace
 
+# Add to path so can import from above directory
+import sys
+sys.path.append('../')
+from sempy_types import SEMPY_SCALAR
+
 # setup
 # -----
 lp.set_caching_enabled(False)
@@ -30,17 +35,16 @@ def cg(A,b,tol=1e-12,maxit=100,verbose=0):
 
     m,n = A.shape
 
-    ip = lpk.gen_inner_prod_knl(n)
-    #Ax = lpk.gen_Ax_knl(m,n)
-    #Ax = lp.set_options(Ax, "write_code")
+    Ax = lpk.gen_Ax_knl()
+    norm = lpk.gen_norm_knl()
+    cgi = lpk.gen_CG_iteration()
+    Ax = lp.set_options(Ax, "write_code")
     #print(lp.generate_code_v2(Ax).device_code())
 
-    x=np.zeros((n,),dtype=np.float64)
-
+    x=np.zeros((n,),dtype=SEMPY_SCALAR)
     
-    
-    evt, (norm_b_loopy,) = ip(queue,x=b,y=b.copy())
-    print(norm_b_loopy)
+    evt, (norm_b_lp,) = norm(queue,x=b)
+    print(norm_b_lp)
 
     norm_b=np.dot(b,b)
     print(norm_b)
@@ -48,7 +52,12 @@ def cg(A,b,tol=1e-12,maxit=100,verbose=0):
     TOL=max(tol*tol*norm_b,tol*tol)
 
     r=b
+
+    evt, (rdotr_lp,) = norm(queue, x=r)
+    print(rdotr_lp)
+
     rdotr=np.dot(r,r)
+    print(rdotr)
     niter=0
 
     if verbose:
@@ -57,10 +66,25 @@ def cg(A,b,tol=1e-12,maxit=100,verbose=0):
         return x,niter
 
     p=r
-    while niter<maxit and rdotr>TOL:
-        Ap=A@p
-        #(evt, result) = Ax(queue, A=A, x=p)
 
+    x_lp=x.copy()
+    r_lp=r.copy()
+    p_lp = r_lp
+    #rdotr_lp = rdotr
+    #p_lp=p.copy()
+
+    while niter<maxit and rdotr>TOL and rdotr_lp > TOL:
+        niter+=1
+
+        # We need to define this for multiple elements
+        evt, (Ap_lp,) = Ax(queue, A=A, x=p_lp)
+
+        evt, (p_lp,r_lp,rdotr_lp,x_lp) = cgi(queue, Ap=Ap_lp, p=p_lp, r=r_lp, rdotr_prev=rdotr_lp, x=x_lp)
+        print("CL: {}".format(rdotr_lp))
+
+        # Numpy version for comparison
+        """
+        Ap=A@p
         pAp=np.dot(p,Ap)
 
         alpha=rdotr/pAp
@@ -76,11 +100,15 @@ def cg(A,b,tol=1e-12,maxit=100,verbose=0):
                 niter,rdotr0,rdotr,alpha,beta,pAp))
 
         p=r+beta*p
-        niter=niter+1
+        print("Numpy: {}".format(rdotr))
+        """
 
+ 
     return x,niter
    
 ##Test
-A = np.random.rand(10,10)
-x = np.random.rand(10)
+A = np.float32(np.random.rand(10,10))
+A += A.T
+A += np.diag(np.sum(A, axis=0))
+x = np.float32(np.random.rand(10))
 cg(A,x)
