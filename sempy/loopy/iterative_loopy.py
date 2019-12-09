@@ -71,7 +71,9 @@ def cg(A,b,tol=1e-12,maxit=100,verbose=0):
     while niter<maxit and rdotr>TOL and rdotr_lp > TOL:
         niter+=1
 
+        # We need to define this for multiple elements
         evt, (Ap_lp,) = Ax(queue, A=A, x=p_lp)
+
         evt, (p_lp,r_lp,rdotr_lp,x_lp) = cgi(queue, Ap=Ap_lp, p=p_lp, r=r_lp, rdotr_prev=rdotr_lp, x=x_lp)
         print("CL: {}".format(rdotr_lp))
 
