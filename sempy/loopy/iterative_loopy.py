@@ -30,7 +30,6 @@ def cg(A,b,tol=1e-12,maxit=100,verbose=0):
 
     m,n = A.shape
 
-    ip = lpk.gen_inner_prod_knl()
     Ax = lpk.gen_Ax_knl()
     norm = lpk.gen_norm_knl()
     cgi = lpk.gen_CG_iteration()
@@ -65,8 +64,9 @@ def cg(A,b,tol=1e-12,maxit=100,verbose=0):
 
     x_lp=x.copy()
     r_lp=r.copy()
-    rdotr_lp = rdotr
-    p_lp=p.copy()
+    p_lp = r_lp
+    #rdotr_lp = rdotr
+    #p_lp=p.copy()
 
     while niter<maxit and rdotr>TOL and rdotr_lp > TOL:
         niter+=1
