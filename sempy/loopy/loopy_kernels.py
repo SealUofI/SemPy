@@ -60,7 +60,7 @@ def gen_CG_iteration():
 
 
 
-def gen_Ax_knl(m,n):
+def gen_Ax_knl():
     knl = lp.make_kernel(
         """
         {[i,j]: 0<=i<m and 0<=j<n }
@@ -82,7 +82,7 @@ def gen_Ax_knl(m,n):
     return knl
 
 
-def gen_norm_knl(n):
+def gen_norm_knl():
     knl = lp.make_kernel(
         """
         {[i]: 0<=i<n}
@@ -103,7 +103,7 @@ def gen_norm_knl(n):
     return knl
 
 
-def gen_inner_prod_knl(n):
+def gen_inner_prod_knl():
     knl = lp.make_kernel(
         """
         {[i]: 0<=i<n}
@@ -123,7 +123,7 @@ def gen_inner_prod_knl(n):
 
     return knl
 
-def gen_axpy_knl(n):
+def gen_axpy_knl():
 
     knl = lp.make_kernel(
         """

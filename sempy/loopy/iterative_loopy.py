@@ -30,17 +30,17 @@ def cg(A,b,tol=1e-12,maxit=100,verbose=0):
 
     m,n = A.shape
 
-    ip = lpk.gen_inner_prod_knl(n)
-    #Ax = lpk.gen_Ax_knl(m,n)
+    ip = lpk.gen_inner_prod_knl()
+    Ax = lpk.gen_Ax_knl()
+    norm = lpk.gen_norm_knl()
+    cgi = lpk.gen_CG_iteration()
     #Ax = lp.set_options(Ax, "write_code")
     #print(lp.generate_code_v2(Ax).device_code())
 
     x=np.zeros((n,),dtype=np.float64)
-
     
-    
-    evt, (norm_b_loopy,) = ip(queue,x=b,y=b.copy())
-    print(norm_b_loopy)
+    evt, (norm_b_lp,) = norm(queue,x=b)
+    print(norm_b_lp)
 
     norm_b=np.dot(b,b)
     print(norm_b)
@@ -48,7 +48,12 @@ def cg(A,b,tol=1e-12,maxit=100,verbose=0):
     TOL=max(tol*tol*norm_b,tol*tol)
 
     r=b
+
+    evt, (rdotr_lp,) = norm(queue, x=r)
+    print(rdotr_lp)
+
     rdotr=np.dot(r,r)
+    print(rdotr)
     niter=0
 
     if verbose:
@@ -57,10 +62,22 @@ def cg(A,b,tol=1e-12,maxit=100,verbose=0):
         return x,niter
 
     p=r
-    while niter<maxit and rdotr>TOL:
-        Ap=A@p
-        #(evt, result) = Ax(queue, A=A, x=p)
 
+    x_lp=x.copy()
+    r_lp=r.copy()
+    rdotr_lp = rdotr
+    p_lp=p.copy()
+
+    while niter<maxit and rdotr>TOL and rdotr_lp > TOL:
+        niter+=1
+
+        evt, (Ap_lp,) = Ax(queue, A=A, x=p_lp)
+        evt, (p_lp,r_lp,rdotr_lp,x_lp) = cgi(queue, Ap=Ap_lp, p=p_lp, r=r_lp, rdotr_prev=rdotr_lp, x=x_lp)
+        print("CL: {}".format(rdotr_lp))
+
+        # Numpy version for comparison
+        """
+        Ap=A@p
         pAp=np.dot(p,Ap)
 
         alpha=rdotr/pAp
@@ -76,11 +93,15 @@ def cg(A,b,tol=1e-12,maxit=100,verbose=0):
                 niter,rdotr0,rdotr,alpha,beta,pAp))
 
         p=r+beta*p
-        niter=niter+1
+        print("Numpy: {}".format(rdotr))
+        """
 
+ 
     return x,niter
    
 ##Test
 A = np.random.rand(10,10)
+A += A.T
+A += np.diag(np.sum(A, axis=0))
 x = np.random.rand(10)
 cg(A,x)
