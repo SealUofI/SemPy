@@ -38,7 +38,7 @@ def gen_CG_iteration():
         x[l] = x[l] + a*p[l] {id=x, dep=a}
         r[l] = r[l] - a*Ap[l] {id=r, dep=a}
         rdotr = sum(k, r[k]*r[k]) {id=rdotr, dep=r}
-        p_out[i] = r[i] + (rdotr * p[i])/rdotr_prev {id=p, dep=rdotr}
+        p_out[i] = r[i] + (rdotr/rdotr_prev) * p[i] {id=p, dep=rdotr}
         """,
         #kernel_data = [
         #    lp.GlobalArg("result", SEMPY_SCALAR, shape=(m), order="C"),
