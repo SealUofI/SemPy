@@ -6,25 +6,6 @@ import pyopencl.clrandom
 from loopy.version import LOOPY_USE_LANGUAGE_VERSION_2018_2
 from loopy.kernel.data import AddressSpace
 
-# setup
-# -----
-lp.set_caching_enabled(False)
-from warnings import filterwarnings, catch_warnings
-filterwarnings('error', category=lp.LoopyWarning)
-import loopy.options
-loopy.options.ALLOW_TERMINAL_COLORS = False
-
-# Add to path so can import from above directory
-import sys
-sys.path.append('../')
-from sempy_types import SEMPY_SCALAR
-
-platform = cl.get_platforms()
-my_gpu_devices = platform[0].get_devices(device_type=cl.device_type.GPU)
-#ctx = cl.Context(devices=my_gpu_devices)
-ctx = cl.create_some_context(interactive=True)
-queue = cl.CommandQueue(ctx)
-
 def gen_CG_iteration():
     knl = lp.make_kernel(
         """
@@ -148,6 +129,27 @@ def gen_axpy_knl():
     return knl
 
 if __name__ == "__main__":
+    # setup
+    # -----
+    lp.set_caching_enabled(False)
+    from warnings import filterwarnings, catch_warnings
+    filterwarnings('error', category=lp.LoopyWarning)
+    import loopy.options
+    loopy.options.ALLOW_TERMINAL_COLORS = False
+
+    # Add to path so can import from above directory
+    import sys
+    sys.path.append('../')
+    from sempy_types import SEMPY_SCALAR
+
+    platform = cl.get_platforms()
+    my_gpu_devices = platform[0].get_devices(device_type=cl.device_type.GPU)
+    #ctx = cl.Context(devices=my_gpu_devices)
+    ctx = cl.create_some_context(interactive=True)
+    queue = cl.CommandQueue(ctx)
+
+
+
     """
     #norm = gen_norm_knl(100)
     #print(norm)
