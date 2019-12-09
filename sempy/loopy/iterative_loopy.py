@@ -6,6 +6,11 @@ import pyopencl.clrandom
 from loopy.version import LOOPY_USE_LANGUAGE_VERSION_2018_2
 from loopy.kernel.data import AddressSpace
 
+# Add to path so can import from above directory
+import sys
+sys.path.append('../')
+from sempy_types import SEMPY_SCALAR
+
 # setup
 # -----
 lp.set_caching_enabled(False)
@@ -33,10 +38,10 @@ def cg(A,b,tol=1e-12,maxit=100,verbose=0):
     Ax = lpk.gen_Ax_knl()
     norm = lpk.gen_norm_knl()
     cgi = lpk.gen_CG_iteration()
-    #Ax = lp.set_options(Ax, "write_code")
+    Ax = lp.set_options(Ax, "write_code")
     #print(lp.generate_code_v2(Ax).device_code())
 
-    x=np.zeros((n,),dtype=np.float64)
+    x=np.zeros((n,),dtype=SEMPY_SCALAR)
     
     evt, (norm_b_lp,) = norm(queue,x=b)
     print(norm_b_lp)
@@ -102,8 +107,8 @@ def cg(A,b,tol=1e-12,maxit=100,verbose=0):
     return x,niter
    
 ##Test
-A = np.random.rand(10,10)
+A = np.float32(np.random.rand(10,10))
 A += A.T
 A += np.diag(np.sum(A, axis=0))
-x = np.random.rand(10)
+x = np.float32(np.random.rand(10))
 cg(A,x)
