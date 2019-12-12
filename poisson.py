@@ -16,11 +16,11 @@ from sempy.iterative import cg,pcg
 from mayavi import mlab
 import matplotlib.pyplot as plt
 
-example_2d=0
-plot_on=0
+example_2d = False
+plot_on    = True
 
-N=15
-n=N+1
+N          = 15
+n          = N+1
 
 if example_2d:
     X,Y=box_ab(0.,1.,N)
@@ -101,6 +101,6 @@ if plot_on:
       print("N/A")
     else:
         mlab.figure()
-        mlab.points3d(X,Y,Z,(x_cg-x_fdm).reshape((n,n,n)),scale_mode="none",scale_factor=0.1)
+        mlab.points3d(X,Y,Z,(x_cg-x_analytic).reshape((n,n,n)),scale_mode="none",scale_factor=0.1)
         mlab.axes()
         mlab.show()
