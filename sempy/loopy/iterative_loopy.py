@@ -7,9 +7,7 @@ from loopy.version import LOOPY_USE_LANGUAGE_VERSION_2018_2
 from loopy.kernel.data import AddressSpace
 
 # Add to path so can import from above directory
-import sys
-sys.path.append('../')
-from sempy_types import SEMPY_SCALAR
+from sempy.types import SEMPY_SCALAR
 
 # setup
 # -----
