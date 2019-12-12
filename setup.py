@@ -7,6 +7,8 @@ setup(name='sempy',
     packages=find_packages(),
     install_requires=[
         'numpy==1.17.3',
-        'meshio==3.3.0'
+        'meshio==3.3.0',
+        'matplotlib==3.1.1',
+        'mayavi==4.6.0'
     ]
 )
