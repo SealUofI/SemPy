@@ -16,19 +16,14 @@ from sempy.iterative import cg,pcg
 from mayavi import mlab
 import matplotlib.pyplot as plt
 
-example_2d=0
-plot_on=1
-
 mesh=load_mesh("box001.msh")
-#print(mesh.ndim)
-#print(mesh.num_vertices)
 print(mesh.get_num_elements())
-#print(mesh.x)
-#print(mesh.y)
-#print(mesh.z)
 
-N=15
-n=N+1
+example_2d = False
+plot_on    = True
+
+N          = 15
+n          = N+1
 
 if example_2d:
     X,Y=box_ab(0.,1.,N)
