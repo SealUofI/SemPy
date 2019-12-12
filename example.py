@@ -14,7 +14,7 @@ from sempy.derivative import reference_derivative_matrix
 
 from sempy.mass import reference_mass_matrix_1d
 
-#from mayavi import mlab
+from mayavi import mlab
 import matplotlib.pyplot as plt
 
 import time
