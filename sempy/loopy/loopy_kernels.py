@@ -84,7 +84,7 @@ def gen_norm_knl():
     return knl
 
 
-def gen_inner_prod_knl():
+def gen_inner_product_knl():
     knl = lp.make_kernel(
         """
         {[i]: 0<=i<n}
@@ -100,6 +100,46 @@ def gen_inner_prod_knl():
         assumptions="n > 0",
         default_offset=None,
         name="inner_product"
+    )
+
+    return knl
+
+def gen_weighted_inner_product_knl():
+    knl = lp.make_kernel(
+        """
+        {[i]: 0<=i<n}
+        """,
+        """
+        result = sum(i,w[i]*x[i]*y[i])
+        """,
+        #kernel_data = [
+        #    lp.ValueArg("result", SEMPY_SCALAR),
+        #    lp.GlobalArg("x", SEMPY_SCALAR, shape=(n,), order="C"),
+        #    lp.GlobalArg("y", SEMPY_SCALAR, shape=(n,), order="C")
+        #],
+        assumptions="n > 0",
+        default_offset=None,
+        name="weighted_inner_product"
+    )
+
+    return knl
+
+def gen_weighted_norm_knl():
+    knl = lp.make_kernel(
+        """
+        {[i]: 0<=i<n}
+        """,
+        """
+        result = sum(i,w[i]*x[i]*x[i])
+        """,
+        #kernel_data = [
+        #    lp.ValueArg("result", SEMPY_SCALAR),
+        #    lp.GlobalArg("x", SEMPY_SCALAR, shape=(n,), order="C"),
+        #    lp.GlobalArg("y", SEMPY_SCALAR, shape=(n,), order="C")
+        #],
+        assumptions="n > 0",
+        default_offset=None,
+        name="weighted_norm"
     )
 
     return knl
@@ -148,14 +188,19 @@ if __name__ == "__main__":
     ctx = cl.create_some_context(interactive=True)
     queue = cl.CommandQueue(ctx)
 
+    wip = gen_weighted_inner_product_knl()
+    print(wip)
+    w_nrm = gen_weighted_norm_knl()
+    print(w_nrm)
 
+    
 
     """
     #norm = gen_norm_knl(100)
     #print(norm)
     #Ax = gen_Ax_knl(100,100)
     #print(Ax)
-    #inner_product = gen_inner_prod_knl(100)
+    #inner_product = gen_inner_product_knl(100)
     #print(inner_product)
     axpy = gen_axpy_knl(100)
     print(axpy)
@@ -171,6 +216,7 @@ if __name__ == "__main__":
     #axpy_code = lp.generate_code_v2(axpy).device_code()
     #print(axpy_code)
     """
+    """
     cg = gen_CG_iteration()
     lp.set_options(cg, "write_code")
     print(cg)
@@ -182,3 +228,4 @@ if __name__ == "__main__":
     print(result)
     #cg_code = lp.generate_code_v2(cg).device_code()
     #print(cg_code)
+    """
