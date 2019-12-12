@@ -28,7 +28,7 @@ niters_cg =[]
 niters_fdm=[]
 orders =[]
 
-for N in range(2,31):
+for N in range(2,10):
     n=N+1
     
     if example_2d:
@@ -234,21 +234,23 @@ plt.xlabel("N - order"   ,fontsize=16)
 plt.savefig('niter_cg.pdf',bbox_inches='tight')
 
 plt.figure()
-plt.semilogy(orders,elapsed_fdm,'b-o')
-plt.semilogy(orders,elapsed_cg,'g-o')
+plt.semilogy(orders,elapsed_fdm,'b-o',label='pcg(fdm)')
+plt.semilogy(orders,elapsed_cg,'g-o',label='cg')
 plt.title("Order vs Elapsed time",fontsize=20)
 plt.xlim(1,N+1)
 plt.xlabel("N - order",fontsize=16)
 plt.ylabel("time (s)" ,fontsize=16)
+plt.legend(loc=0)
 plt.savefig('elapsed_fdm_cg.pdf',bbox_inches='tight')
 
 plt.figure()
-plt.semilogy(orders,niters_fdm,'b-o')
-plt.semilogy(orders,niters_cg ,'g-o')
+plt.semilogy(orders,niters_fdm,'b-o',label='pcg(fdm)')
+plt.semilogy(orders,niters_cg ,'g-o',label='cg')
 plt.title("Order vs number of iterations for FDM",fontsize=20)
 plt.xlim(2,N+1)
 plt.ylabel("# iterations",fontsize=16)
 plt.xlabel("N - order"   ,fontsize=16)
+plt.legend(loc=0)
 plt.savefig('niter_fdm_cg.pdf',bbox_inches='tight')
 
 #if plot_on:
