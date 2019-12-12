@@ -17,7 +17,15 @@ from mayavi import mlab
 import matplotlib.pyplot as plt
 
 example_2d=0
-plot_on=0
+plot_on=1
+
+mesh=load_mesh("box001.msh")
+#print(mesh.ndim)
+#print(mesh.num_vertices)
+print(mesh.get_num_elements())
+#print(mesh.x)
+#print(mesh.y)
+#print(mesh.z)
 
 N=15
 n=N+1
@@ -85,22 +93,25 @@ tol=1.e-8
 maxit=1000
 verbose=0
 
-if example_2d:
-    x_cg  ,niter_cg  =cg (Ax_2d            ,b,tol,maxit,verbose)
-    x_mass,niter_mass=pcg(Ax_2d,precon_mass,b,tol,maxit,verbose)
-else:
-    x_cg  ,niter_cg  =cg (Ax            ,b,tol,maxit,verbose)
-    x_mass,niter_mass=pcg(Ax,precon_mass,b,tol,maxit,verbose)
-
-print("     niter/error")
-print("cg  : {}/{}".format(niter_cg  ,np.abs(np.max(x_cg  -x_analytic))))
-print("mass: {}/{}".format(niter_mass,np.abs(np.max(x_mass-x_analytic))))
-
-if plot_on:
-    if example_2d:
-      print("N/A")
-    else:
-        mlab.figure()
-        mlab.points3d(X,Y,Z,(x_cg-x_fdm).reshape((n,n,n)),scale_mode="none",scale_factor=0.1)
-        mlab.axes()
-        mlab.show()
+#if example_2d:
+#    x_cg  ,niter_cg  =cg (Ax_2d            ,b,tol,maxit,verbose)
+#    x_mass,niter_mass=pcg(Ax_2d,precon_mass,b,tol,maxit,verbose)
+#else:
+#    x_cg  ,niter_cg  =cg (Ax            ,b,tol,maxit,verbose)
+#    x_mass,niter_mass=pcg(Ax,precon_mass,b,tol,maxit,verbose)
+#
+#print("     niter/error")
+#print("cg  : {}/{}".format(niter_cg  ,\
+#  np.abs(np.max(x_cg  -x_analytic))))
+#print("mass: {}/{}".format(niter_mass,\
+#  np.abs(np.max(x_mass-x_analytic))))
+#
+#if plot_on:
+#    if example_2d:
+#      print("N/A")
+#    else:
+#        mlab.figure()
+#        mlab.points3d(X,Y,Z,(x_cg-x_analytic).reshape((n,n,n)),\
+#          scale_mode="none",scale_factor=0.1)
+#        mlab.axes()
+#        mlab.show()

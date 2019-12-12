@@ -1,3 +1,4 @@
+// Run using: gmsh -3 -setnumber xn 0 -setnumber yn 0 -setnumber zn 0 box.geo -o box001.msh
 cl__1 = 1.0;
 xmax = DefineNumber[1.0];
 xmin = DefineNumber[0.0];
