@@ -11,7 +11,7 @@ from sempy.kron import kron,kron_2d
 
 from sempy.mass import reference_mass_matrix_3d,\
     reference_mass_matrix_2d
-from sempy.stiffness import gradient,gradient_2d,\
+from sempy.gradient import gradient,gradient_2d,\
     gradient_transpose,gradient_transpose_2d
 
 class Face:

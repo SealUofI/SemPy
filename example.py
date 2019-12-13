@@ -5,8 +5,8 @@ import scipy.linalg as sla
 from sempy.meshes.curved import trapezoid
 from sempy.meshes.box import reference,reference_2d,box_ab
 
-from sempy.stiffness import geometric_factors,geometric_factors_2d
-from sempy.stiffness import gradient,gradient_2d,gradient_transpose,gradient_transpose_2d
+from sempy.gradient import gradient,gradient_2d,\
+    gradient_transpose,gradient_transpose_2d
 
 from sempy.iterative import cg,pcg
 

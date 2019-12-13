@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 
-from sempy.stiffness import gradient,gradient_2d,\
+from sempy.gradient import gradient,gradient_2d,\
     gradient_transpose,gradient_transpose_2d
 
 from sempy.mesh import load_mesh
