@@ -8,7 +8,6 @@ class Mesh:
             raise Exception("Only strings are allowed for file name")
 
         meshin=meshio.read(fname)
-        print(meshin)
 
         ## element to vertex map
         self.elem_to_vert_map=meshin.cells['hexahedron']
@@ -31,6 +30,7 @@ class Mesh:
         self.x=[]
         self.y=[]
         self.z=[]
+
         for i in range(self.num_elements):
             for j in range(self.num_vertices):
                 self.x.append(meshin.points[\
@@ -53,8 +53,26 @@ class Mesh:
 
         self.num_boundary_faces=len(self.boundary_faces)
 
+    def setup(self,N):
+        self.N  =N;
+        self.Nq =N+1;
+        self.Nfp=(N+1)*(N+1);
+        self.Np =(N+1)*(N+1)*(N+1)
+
     def get_num_elements(self):
         return self.num_elements
+
+    def get_num_points(self):
+        return self.num_elements*self.num_vertices
+
+    def get_x(self):
+        return self.x
+
+    def get_y(self):
+        return self.y
+
+    def get_z(self):
+        return self.z
 
 def load_mesh(fname):
     dir_path=os.path.dirname(os.path.realpath(__file__))

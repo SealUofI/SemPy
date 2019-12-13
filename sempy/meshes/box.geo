@@ -1,18 +1,22 @@
-// Run using: gmsh -3 -setnumber xn 0 -setnumber yn 0 -setnumber zn 0 box.geo -o box001.msh
-cl__1 = 1.0;
-xmax = DefineNumber[1.0];
-xmin = DefineNumber[0.0];
-// Vertices
-Point(1) = {xmin, xmin, xmin, cl__1};
-Point(2) = {xmax, xmin, xmin, cl__1};
-Point(3) = {xmax, xmax, xmin, cl__1};
-Point(4) = {xmin, xmax, xmin, cl__1};
-Point(5) = {xmin, xmin, xmax, cl__1};
-Point(6) = {xmax, xmin, xmax, cl__1};
-Point(7) = {xmax, xmax, xmax, cl__1};
-Point(8) = {xmin, xmax, xmax, cl__1};
-// Edges
-Line(9)  = {1, 2};
+//resolution uniform for now
+cl__1 =1.0;
+
+xmin = 0.0;
+xmax = 1.0;
+ymin = 0.0;
+ymax = 1.0;
+zmin = 0.0;
+zmax = 1.0;
+
+Point(1) = {xmin, ymin, zmin, cl__1};
+Point(2) = {xmax, ymin, zmin, cl__1};
+Point(3) = {xmax, ymax, zmin, cl__1};
+Point(4) = {xmin, ymax, zmin, cl__1};
+Point(5) = {xmin, ymin, zmax, cl__1};
+Point(6) = {xmax, ymin, zmax, cl__1};
+Point(7) = {xmax, ymax, zmax, cl__1};
+Point(8) = {xmin, ymax, zmax, cl__1};
+Line(9) = {1, 2};
 Line(10) = {2, 3};
 Line(11) = {3, 4};
 Line(12) = {4, 1};
@@ -24,11 +28,6 @@ Line(17) = {1, 5};
 Line(18) = {2, 6};
 Line(19) = {3, 7};
 Line(20) = {4, 8};
-//
-Transfinite Line {9, 13, 11, 15}  = (2^xn+1) Using Progression 1;
-Transfinite Line {12, 10, 14, 16} = (2^yn+1) Using Progression 1;
-Transfinite Line {17, 18, 20, 19} = (2^zn+1) Using Progression 1;
-//
 Line Loop(22) = {16, 13, 14, 15};
 Plane Surface(22) = {22};
 Transfinite Surface {22} = {6,7,8,5};
@@ -56,5 +55,6 @@ Recombine Surface {32};
 Surface Loop(34) = {22, 28, 26, 24, 30, 32};
 Volume(34) = {34};
 Transfinite Volume {34} = {5,6,2,1,8,7,3,4};
-//+Physical Surface("Inflow") = {22, 24, 26, 28, 30, 32};
-//+Physical Volume("Domain") = {34};
+// Physical Surface("Inflow") = {22, 24, 26, 28, 30, 32};
+Physical Surface("Wall", 1) = {22, 24, 26, 28, 30, 32};
+Physical Volume("Domain") = {34};

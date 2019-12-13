@@ -18,12 +18,16 @@ import matplotlib.pyplot as plt
 
 mesh=load_mesh("box001.msh")
 print(mesh.get_num_elements())
+print(mesh.get_num_points())
+print(mesh.x)
+print(mesh.y)
+print(mesh.z)
 
 example_2d = False
 plot_on    = True
 
-N          = 15
-n          = N+1
+N  = 15
+n  = N+1
 
 if example_2d:
     X,Y=box_ab(0.,1.,N)
