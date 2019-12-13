@@ -9,6 +9,11 @@ from sempy.quadrature import gauss_lobatto
 from sempy.interpolation import lagrange
 from sempy.kron import kron,kron_2d
 
+from sempy.mass import reference_mass_matrix_3d,\
+    reference_mass_matrix_2d
+from sempy.stiffness import gradient,gradient_2d,\
+    gradient_transpose,gradient_transpose_2d
+
 class Face:
     def __init__(self,elem_id,face_id,nverts):
         self.elem_id=elem_id
@@ -196,10 +201,9 @@ class Mesh:
         z_N,jnk=gauss_lobatto(N)
         J  =lagrange(z_N,z_1)
 
-        self.xe=np.zeros((self.get_num_elements(),self.Np))
-        self.ye=np.zeros((self.get_num_elements(),self.Np))
-        if self.get_ndim()==3:
-            self.ze=np.zeros((self.get_num_elements(),self.Np))
+        self.xe=[]
+        self.ye=[]
+        self.ze=[]
 
         if self.ndim==3:
             for e in range(self.get_num_elements()):
@@ -215,9 +219,9 @@ class Mesh:
                 ye=kron(J,J,J,yy)
                 ze=kron(J,J,J,zz)
 
-                self.xe[e,:]=xe
-                self.ye[e,:]=ye
-                self.ze[e,:]=ze
+                self.xe.append(xe)
+                self.ye.append(ye)
+                self.ze.append(ze)
         else:
             for e in range(self.get_num_elements()):
                 x=self.x[e,:]
@@ -229,8 +233,11 @@ class Mesh:
                 xe=kron(J,J,J,xx)
                 ye=kron(J,J,J,yy)
 
-                self.xe[e,:]=xe
-                self.ye[e,:]=ye
+                self.xe.append(xe)
+                self.ye.append(ye)
+        self.xe=np.array(self.xe)
+        self.ye=np.array(self.ye)
+        self.ze=np.array(self.ze)
 
     def get_x(self):
         return self.xe
@@ -240,6 +247,83 @@ class Mesh:
 
     def get_z(self):
         return self.ze
+
+    def calc_geometric_factors(self):
+        n=self.Nq
+
+        self.geom = []
+        self.jaco = []
+
+        if self.get_ndim()==3:
+            self.B=reference_mass_matrix_3d(n-1)
+            for e in range(self.get_num_elements()):
+                Xr,Xs,Xt=gradient(self.xe[e,:],n)
+                Yr,Ys,Yt=gradient(self.ye[e,:],n)
+                Zr,Zs,Zt=gradient(self.ze[e,:],n)
+
+                J=Xr*(Ys*Zt-Yt*Zs)-Yr*(Xs*Zt-Xt*Zs)+Zr*(Xs*Yt-Ys*Xt)
+                self.jaco.append(J)
+
+                rx=(Ys*Zt-Yt*Zs)/J
+                sx=(Yt*Zr-Yr*Zt)/J
+                tx=(Yr*Zs-Ys*Zr)/J
+
+                ry=-(Zt*Xs-Zs*Xt)/J
+                sy=-(Zr*Xt-Zt*Xr)/J
+                ty=-(Zs*Xr-Zr*Xs)/J
+
+                rz= (Xs*Yt-Xt*Ys)/J
+                sz=-(Xr*Yt-Xt*Yr)/J
+                tz= (Xr*Ys-Xs*Yr)/J
+
+                g11=rx*rx+ry*ry+rz*rz
+                g12=rx*sx+ry*sy+rz*sz
+                g13=rx*tx+ry*ty+rz*tz
+                g22=sx*sx+sy*sy+sz*sz
+                g23=sx*tx+sy*ty+sz*tz
+                g33=tx*tx+ty*ty+tz*tz
+
+                g=np.zeros((3,3,g11.size))
+                g[0,0,:]=g11*self.B*J
+                g[0,1,:]=g12*self.B*J
+                g[0,2,:]=g13*self.B*J
+                g[1,0,:]=g12*self.B*J
+                g[1,1,:]=g22*self.B*J
+                g[1,2,:]=g23*self.B*J
+                g[2,0,:]=g13*self.B*J
+                g[2,1,:]=g23*self.B*J
+                g[2,2,:]=g33*self.B*J
+
+                self.geom.append(g)
+        else:
+            self.B=reference_mass_matrix_2d(n-1)
+            for e in range(self.get_num_elements()):
+                Xr,Xs=gradient_2d(self.xe[e,:],n)
+                Yr,Ys=gradient_2d(self.ye[e,:],n)
+
+                J=Xr*Ys-Yr*Xs
+                self.jaco.append(J)
+
+                rx= Ys/J
+                sx=-Yr/J
+
+                ry=-Xs/J
+                sy= Xr/J
+
+                g11=rx*rx+ry*ry
+                g12=rx*sx+ry*sy
+                g22=sx*sx+sy*sy
+
+                g=np.zeros((2,2,g11.size))
+                g[0,0,:]=g11*self.B*J
+                g[0,1,:]=g12*self.B*J
+                g[1,0,:]=g12*self.B*J
+                g[1,1,:]=g22*self.B*J
+
+                self.geom.append(g)
+
+        self.geom=np.array(self.geom)
+        self.jaco=np.array(self.jaco)
 
 def load_mesh(fname):
     dir_path=os.path.dirname(os.path.realpath(__file__))

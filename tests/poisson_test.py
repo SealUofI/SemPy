@@ -1,14 +1,13 @@
 import pytest
 import numpy as np
 
-from sempy.stiffness import calc_geometric_factors
 from sempy.stiffness import gradient,gradient_2d,\
     gradient_transpose,gradient_transpose_2d
 
 from sempy.mesh import load_mesh
 from sempy.iterative import pcg
 
-from sempy.meshes.box import box_ab,box_ab_2d
+from sempy.meshes.box import box_ab_2d
 
 def test_poisson_sin_3d():
     N=15
@@ -16,7 +15,8 @@ def test_poisson_sin_3d():
 
     mesh=load_mesh("box001.msh")
     mesh.find_physical_nodes(N)
-    calc_geometric_factors(mesh)
+    mesh.calc_geometric_factors()
+
     G=mesh.geom[0,:]
     J=mesh.jaco[0,:]
     B=mesh.B
