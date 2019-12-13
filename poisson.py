@@ -2,11 +2,8 @@ import numpy as np
 import numpy.linalg as nla
 import scipy.linalg as sla
 
-from sempy.meshes.curved import trapezoid
-from sempy.meshes.box import reference,reference_2d,box_ab
 from sempy.mesh import load_mesh
 
-from sempy.mass import reference_mass_matrix_1d
 from sempy.stiffness import calc_geometric_factors
 from sempy.stiffness import gradient,gradient_2d,gradient_transpose,\
     gradient_transpose_2d
