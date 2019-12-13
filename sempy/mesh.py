@@ -4,7 +4,10 @@ import numpy as np
 
 from functools import cmp_to_key
 
-import sempy
+from sempy import debug
+from sempy.quadrature import gauss_lobatto
+from sempy.interpolation import lagrange
+from sempy.kron import kron,kron_2d
 
 class Face:
     def __init__(self,elem_id,face_id,nverts):
@@ -92,9 +95,12 @@ class Mesh:
                     self.z.append(meshin.points[\
                         self.elem_to_vert_map[i,j],2])
 
-        self.x=np.array(self.x)
-        self.y=np.array(self.y)
-        self.z=np.array(self.z)
+        self.x=np.array(self.x).reshape((self.get_num_elements(),\
+            self.get_num_verts()))
+        self.y=np.array(self.y).reshape((self.get_num_elements(),\
+            self.get_num_verts()))
+        self.z=np.array(self.z).reshape((self.get_num_elements(),\
+            self.get_num_verts()))
 
         ## TODO: Read in boundary faces
         if self.ndim==3:
@@ -107,11 +113,14 @@ class Mesh:
     def get_num_elements(self):
         return self.num_elements
 
+    def get_ndim(self):
+        return self.ndim
+
     def get_num_faces(self):
         return self.nfaces
 
     def get_num_verts(self):
-        return self.nverts
+        return self.num_vertices
 
     def get_face_to_vert_map(self):
         return self.face_to_vert_map
@@ -126,7 +135,7 @@ class Mesh:
         nelems     =self.get_num_elements()
         nfaces     =self.get_num_faces()
         nface_verts=self.get_num_face_verts()
-        if sempy.debug:
+        if debug:
             print("elems/faces/face_verts: {}/{}/{}".format(\
                 nelems,nfaces,nface_verts))
 
@@ -147,7 +156,7 @@ class Mesh:
 
         for i in range(nelems*nfaces-1):
             if not compare_verts(faces[i],faces[i+1]):
-                if sempy.debug:
+                if debug:
                     print("faces {}/{} and {}/{} match.".format(\
                         faces[i  ].elem_id,faces[i  ].face_id,
                         faces[i+1].elem_id,faces[i+1].face_id))
@@ -172,14 +181,65 @@ class Mesh:
         self.elem_to_face_map=\
             np.array(self.elem_to_face_map).reshape((nelems,nfaces))
 
+    def find_physical_nodes(self,N):
+        self.N  =N;
+        self.Nq =N+1;
+
+        if self.get_ndim()==3:
+            self.Nfp=(N+1)*(N+1);
+            self.Np =(N+1)*(N+1)*(N+1)
+        else:
+            self.Nfp=(N+1)
+            self.Np =(N+1)*(N+1)
+
+        z_1,jnk=gauss_lobatto(1)
+        z_N,jnk=gauss_lobatto(N)
+        J  =lagrange(z_N,z_1)
+
+        self.xe=np.zeros((self.get_num_elements(),self.Np))
+        self.ye=np.zeros((self.get_num_elements(),self.Np))
+        if self.get_ndim()==3:
+            self.ze=np.zeros((self.get_num_elements(),self.Np))
+
+        if self.ndim==3:
+            for e in range(self.get_num_elements()):
+                x=self.x[e,:]
+                y=self.y[e,:]
+                z=self.z[e,:]
+
+                xx=np.array([x[0],x[1],x[3],x[2],x[4],x[5],x[7],x[6]])
+                yy=np.array([y[0],y[1],y[3],y[2],y[4],y[5],y[7],y[6]])
+                zz=np.array([z[0],z[1],z[3],z[2],z[4],z[5],z[7],z[6]])
+
+                xe=kron(J,J,J,xx)
+                ye=kron(J,J,J,yy)
+                ze=kron(J,J,J,zz)
+
+                self.xe[e,:]=xe
+                self.ye[e,:]=ye
+                self.ze[e,:]=ze
+        else:
+            for e in range(self.get_num_elements()):
+                x=self.x[e,:]
+                y=self.y[e,:]
+
+                xx=np.array([x[0],x[1],x[3],x[2]])
+                yy=np.array([y[0],y[1],y[3],y[2]])
+
+                xe=kron(J,J,J,xx)
+                ye=kron(J,J,J,yy)
+
+                self.xe[e,:]=xe
+                self.ye[e,:]=ye
+
     def get_x(self):
-        return self.x
+        return self.xe
 
     def get_y(self):
-        return self.y
+        return self.ye
 
     def get_z(self):
-        return self.z
+        return self.ze
 
 def load_mesh(fname):
     dir_path=os.path.dirname(os.path.realpath(__file__))
