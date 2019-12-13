@@ -66,69 +66,78 @@ def gradient_transpose_2d(Wx,Wy,n):
 
     return Ur.reshape((nn,))+Us.reshape((nn,))
 
-def geometric_factors(X,Y,Z,n):
-    Xr,Xs,Xt=gradient(X,n)
-    Yr,Ys,Yt=gradient(Y,n)
-    Zr,Zs,Zt=gradient(Z,n)
+def calc_geometric_factors(mesh):
+    n=mesh.Nq
 
-    J=Xr*(Ys*Zt-Yt*Zs)-Yr*(Xs*Zt-Xt*Zs)+Zr*(Xs*Yt-Ys*Xt)
+    mesh.geom = []
+    mesh.jaco = []
 
-    B=reference_mass_matrix_3d(n-1)
-    
-    rx=(Ys*Zt-Yt*Zs)/J
-    sx=(Yt*Zr-Yr*Zt)/J
-    tx=(Yr*Zs-Ys*Zr)/J
-    
-    ry=-(Zt*Xs-Zs*Xt)/J
-    sy=-(Zr*Xt-Zt*Xr)/J
-    ty=-(Zs*Xr-Zr*Xs)/J
-    
-    rz=(Xs*Yt-Xt*Ys)/J
-    sz=-(Xr*Yt-Xt*Yr)/J
-    tz=(Xr*Ys-Xs*Yr)/J
-    
-    G11=rx*rx+ry*ry+rz*rz
-    G12=rx*sx+ry*sy+rz*sz
-    G13=rx*tx+ry*ty+rz*tz
-    G22=sx*sx+sy*sy+sz*sz
-    G23=sx*tx+sy*ty+sz*tz
-    G33=tx*tx+ty*ty+tz*tz
+    if mesh.get_ndim()==3:
+        mesh.B=reference_mass_matrix_3d(n-1)
+        for e in range(mesh.get_num_elements()):
+            Xr,Xs,Xt=gradient(mesh.xe[e,:],n)
+            Yr,Ys,Yt=gradient(mesh.ye[e,:],n)
+            Zr,Zs,Zt=gradient(mesh.ze[e,:],n)
 
-    G=np.zeros((3,3,G11.size))
-    G[0,0,:]=G11*B*J
-    G[0,1,:]=G12*B*J
-    G[0,2,:]=G13*B*J
-    G[1,0,:]=G12*B*J
-    G[1,1,:]=G22*B*J
-    G[1,2,:]=G23*B*J
-    G[2,0,:]=G13*B*J
-    G[2,1,:]=G23*B*J
-    G[2,2,:]=G33*B*J
+            J=Xr*(Ys*Zt-Yt*Zs)-Yr*(Xs*Zt-Xt*Zs)+Zr*(Xs*Yt-Ys*Xt)
+            mesh.jaco.append(J)
 
-    return G,J,B
+            rx=(Ys*Zt-Yt*Zs)/J
+            sx=(Yt*Zr-Yr*Zt)/J
+            tx=(Yr*Zs-Ys*Zr)/J
 
-def geometric_factors_2d(X,Y,n):
-    Xr,Xs=gradient_2d(X,n)
-    Yr,Ys=gradient_2d(Y,n)
+            ry=-(Zt*Xs-Zs*Xt)/J
+            sy=-(Zr*Xt-Zt*Xr)/J
+            ty=-(Zs*Xr-Zr*Xs)/J
 
-    J=Xr*Ys-Yr*Xs
+            rz= (Xs*Yt-Xt*Ys)/J
+            sz=-(Xr*Yt-Xt*Yr)/J
+            tz= (Xr*Ys-Xs*Yr)/J
 
-    B=reference_mass_matrix_2d(n-1)
-    
-    rx=Ys/J
-    sx=-Yr/J
-    
-    ry=-Xs/J
-    sy=Xr/J
-    
-    G11=rx*rx+ry*ry
-    G12=rx*sx+ry*sy
-    G22=sx*sx+sy*sy
+            g11=rx*rx+ry*ry+rz*rz
+            g12=rx*sx+ry*sy+rz*sz
+            g13=rx*tx+ry*ty+rz*tz
+            g22=sx*sx+sy*sy+sz*sz
+            g23=sx*tx+sy*ty+sz*tz
+            g33=tx*tx+ty*ty+tz*tz
 
-    G=np.zeros((2,2,G11.size))
-    G[0,0,:]=G11*B*J
-    G[0,1,:]=G12*B*J
-    G[1,0,:]=G12*B*J
-    G[1,1,:]=G22*B*J
+            g=np.zeros((3,3,g11.size))
+            g[0,0,:]=g11*mesh.B*J
+            g[0,1,:]=g12*mesh.B*J
+            g[0,2,:]=g13*mesh.B*J
+            g[1,0,:]=g12*mesh.B*J
+            g[1,1,:]=g22*mesh.B*J
+            g[1,2,:]=g23*mesh.B*J
+            g[2,0,:]=g13*mesh.B*J
+            g[2,1,:]=g23*mesh.B*J
+            g[2,2,:]=g33*mesh.B*J
 
-    return G,J,B
+            mesh.geom.append(g)
+    else:
+        B=reference_mass_matrix_2d(n-1)
+        for e in range(mesh.get_num_elements()):
+            Xr,Xs=gradient_2d(mesh.xe[e,:],n)
+            Yr,Ys=gradient_2d(mesh.ye[e,:],n)
+
+            J=Xr*Ys-Yr*Xs
+            mesh.jaco.append(J)
+
+            rx= Ys/J
+            sx=-Yr/J
+
+            ry=-Xs/J
+            sy= Xr/J
+
+            g11=rx*rx+ry*ry
+            g12=rx*sx+ry*sy
+            g22=sx*sx+sy*sy
+
+            g=np.zeros((2,2,g11.size))
+            g[0,0,:]=g11*mesh.B*J
+            g[0,1,:]=g12*mesh.B*J
+            g[1,0,:]=g12*mesh.B*J
+            g[1,1,:]=g22*mesh.B*J
+
+            mesh.geom.append(g)
+    mesh.geom=np.array(mesh.geom)
+    mesh.jaco=np.array(mesh.jaco)
