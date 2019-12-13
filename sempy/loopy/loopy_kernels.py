@@ -144,7 +144,7 @@ def gen_weighted_norm_knl():
 
     return knl
 
-def gen_vector_update_knl():
+def gen_inplace_xpay_knl():
 
     knl = lp.make_kernel(
         """
@@ -161,14 +161,38 @@ def gen_vector_update_knl():
         #],
         assumptions="n > 0",
         default_offset=None,
-        name="vector_update"
+        name="inplace_xpay"
     )
 
     #knl = lp.tag_inames(knl, [("i", "g.0")])
 
     return knl
 
-   
+def gen_inplace_axpy_knl():
+
+    knl = lp.make_kernel(
+        """
+        {[i]: 0<=i<n}
+        """,
+        """
+        x[i] = a*x[i] + y[i]
+        """,
+        #kernel_data = [
+        #    lp.GlobalArg("result", SEMPY_SCALAR, shape=(n,), order="C"),
+        #    lp.ValueArg("a", SEMPY_SCALAR),
+        #    lp.GlobalArg("x", SEMPY_SCALAR, shape=(n,), order="C"),
+        #    lp.GlobalArg("y", SEMPY_SCALAR, shape=(n,), order="C")
+        #],
+        assumptions="n > 0",
+        default_offset=None,
+        name="inplace_axpy"
+    )
+
+    #knl = lp.tag_inames(knl, [("i", "g.0")])
+
+    return knl
+
+  
 
 def gen_axpy_knl():
 
