@@ -16,12 +16,10 @@ from sempy.iterative import cg,pcg
 from mayavi import mlab
 import matplotlib.pyplot as plt
 
-mesh=load_mesh("box001.msh")
-print(mesh.get_num_elements())
-print(mesh.get_num_points())
-print(mesh.x)
-print(mesh.y)
-print(mesh.z)
+mesh=load_mesh("box004.msh")
+print("num elements: {}".format(mesh.get_num_elements()))
+print(mesh.elem_to_elem_map)
+print(mesh.elem_to_face_map)
 
 example_2d = False
 plot_on    = True
