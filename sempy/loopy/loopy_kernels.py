@@ -144,6 +144,32 @@ def gen_weighted_norm_knl():
 
     return knl
 
+def gen_vector_update_knl():
+
+    knl = lp.make_kernel(
+        """
+        {[i]: 0<=i<n}
+        """,
+        """
+        x[i] = x[i] + a*y[i]
+        """,
+        #kernel_data = [
+        #    lp.GlobalArg("result", SEMPY_SCALAR, shape=(n,), order="C"),
+        #    lp.ValueArg("a", SEMPY_SCALAR),
+        #    lp.GlobalArg("x", SEMPY_SCALAR, shape=(n,), order="C"),
+        #    lp.GlobalArg("y", SEMPY_SCALAR, shape=(n,), order="C")
+        #],
+        assumptions="n > 0",
+        default_offset=None,
+        name="vector_update"
+    )
+
+    #knl = lp.tag_inames(knl, [("i", "g.0")])
+
+    return knl
+
+   
+
 def gen_axpy_knl():
 
     knl = lp.make_kernel(
@@ -194,7 +220,8 @@ if __name__ == "__main__":
     print(w_nrm)
 
     
-
+    update = gen_vector_update_knl()
+    print(update)
     """
     #norm = gen_norm_knl(100)
     #print(norm)
