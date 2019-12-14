@@ -12,14 +12,9 @@ def gen_gather_scatter_knl():
         {[k,i,j]: 0<=i,j<maxIter and 1<=k<n}
         """,
         """
-        #start(k) := gatherStarts[k-1]
-        #end(k) := gatherStarts[k]
-        #diff(k) := end(k) - start(k)
-        #rhs := sum(i, q_in[gatherIds[i]])
         for k
             <> start = gatherStarts[k-1]
-            <> end = gatherStarts[k]
-            <> diff = end - start
+            <> diff = gatherStarts[k] - start
             <> gq = 0 {id=gq1}
             for i
                 if i < diff
@@ -28,13 +23,9 @@ def gen_gather_scatter_knl():
             end
             for j
                 if j < diff
-                    # Probably needs to be atomic
                     q_out[gatherIds[start + j]] = gq {dep=gq*}
                 end
             end
-            
-            #q_out[gatherIds[j]] = rhs
-
         end
         """,
         assumptions="maxIter > 0 and n > 1",
