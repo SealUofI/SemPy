@@ -127,6 +127,8 @@ class Mesh:
                 if self.ndim==3:
                     self.z.append(meshin.points[\
                         self.elem_to_vert_map[i,j],2])
+                else:
+                    self.z.append(0)
 
         self.x=np.array(self.x).reshape((self.get_num_elems(),\
             self.get_num_verts()))
@@ -226,15 +228,6 @@ class Mesh:
             self.Nfp=(N+1)
             self.Np =(N+1)*(N+1)
 
-        if self.get_ndim()==3:
-            offset=N*self.Nfp
-            self.vertex_ids=np.array(\
-                [0,self.Nq-1,self.Nfp-1-N,self.Nfp-1,
-                 offset,offset+self.Nq-1,offset+self.Nfp-1-N,\
-                    offset+self.Nfp-1])
-        else:
-            raise Exception("vertex ids are not calculated for 2D")
-
         z_1,jnk=gauss_lobatto(1)
         z_N,jnk=gauss_lobatto(N)
         J  =lagrange(z_N,z_1)
@@ -267,62 +260,22 @@ class Mesh:
             for e in range(self.get_num_elems()):
                 x=self.x[e,:]
                 y=self.y[e,:]
+                z=self.z[e,:]
 
                 xx=np.array([x[0],x[1],x[3],x[2]])
                 yy=np.array([y[0],y[1],y[3],y[2]])
+                zz=np.arraz([z[0],z[1],z[3],z[2]])
 
                 xe=kron(J,J,J,xx)
                 ye=kron(J,J,J,yy)
+                ze=kron(J,J,J,zz)
 
                 self.xe.append(xe)
                 self.ye.append(ye)
+                self.ze.append(ze)
         self.xe=np.array(self.xe)
         self.ye=np.array(self.ye)
         self.ze=np.array(self.ze)
-
-    def establish_global_numbering(self):
-        nelem=self.get_num_elems()
-        Np=self.Np
-
-        points=[]
-        count =0
-        for e in range(nelem):
-            for n in range(Np):
-                points.append(Point(self.xe[e,n],self.ye[e,n],\
-                    self.ze[e,n],count))
-                count+=1
-
-        points=sorted(points,key=cmp_to_key(compare_points))
-
-        tol=1e-12
-        size=nelem*Np
-        global_id=1
-        for i in range(size-1):
-            points[i].global_id=global_id
-            if get_distance(points[i],points[i+1])>tol:
-                global_id+=1
-        points[size-1].global_id=global_id
-
-        points=sorted(points,key=cmp_to_key(compare_sequence_id))
-
-        count=0
-        self.global_id=np.zeros((nelem,Np),dtype=np.int32)
-        for e in range(nelem):
-            for n in range(Np):
-                self.xe[e,n]       =points[count].x
-                self.ye[e,n]       =points[count].y
-                self.ze[e,n]       =points[count].z
-                self.global_id[e,n]=points[count].global_id
-                count+=1
-
-    def get_x(self):
-        return self.xe
-
-    def get_y(self):
-        return self.ye
-
-    def get_z(self):
-        return self.ze
 
     def calc_geometric_factors(self):
         n=self.Nq
@@ -401,20 +354,60 @@ class Mesh:
         self.geom=np.array(self.geom)
         self.jaco=np.array(self.jaco)
 
-    def setup_gather_scatter(self):
-#        nelem=self.get_num_elems()
-#        nvert=self.get_num_verts()
-#        global_vertex_ids=np.zeros((nelem,nvert))
-#        for e in range(nelem):
-#            for v in range(nvert):
-#                global_vertex_ids[e,v]=e*self.Np+self.vertex_ids[v]
-#        gs=GS(comm)
-#        gs.gs(global_vertex_ids)
-#
-#        for elem in range(nelem):
-#            for n in range(self.Np):
-#                global_ids[elem,n]=elem*self.Np+n+1
-        pass
+    def establish_global_numbering(self):
+        nelem=self.get_num_elems()
+        Np=self.Np
+
+        points=[]
+        count =0
+        for e in range(nelem):
+            for n in range(Np):
+                points.append(Point(self.xe[e,n],self.ye[e,n],\
+                    self.ze[e,n],count))
+                count+=1
+
+        points=sorted(points,key=cmp_to_key(compare_points))
+
+        tol=1e-12
+        size=nelem*Np
+        global_id=1
+        for i in range(size-1):
+            points[i].global_id=global_id
+            if get_distance(points[i],points[i+1])>tol:
+                global_id+=1
+        points[size-1].global_id=global_id
+
+        points=sorted(points,key=cmp_to_key(compare_sequence_id))
+
+        count=0
+        self.global_id=np.zeros((nelem,Np),dtype=np.int32)
+        for e in range(nelem):
+            for n in range(Np):
+                self.xe[e,n]       =points[count].x
+                self.ye[e,n]       =points[count].y
+                self.ze[e,n]       =points[count].z
+                self.global_id[e,n]=points[count].global_id
+                count+=1
+
+        self.gs=GS(comm)
+        self.gs.setup(self.global_id.reshape((size,)))
+
+        self.rmult=np.ones((nelem*Np,),dtype=np.float64)
+        self.gs.gs(self.rmult,gs_double,gs_add)
+        self.rmult=1.0/self.rmult
+        self.rmult=self.rmult.reshape((nelem,Np))
+
+    def dssum(self,x):
+        nelem=self.get_num_elems()
+        Np=self.Np
+
+        x=x.reshape((nelem*Np,))
+
+        self.gs.gs(x,gs_double,gs_add)
+
+        x=x.reshape((nelem,Np))
+
+        return x
 
 def load_mesh(fname):
     dir_path=os.path.dirname(os.path.realpath(__file__))

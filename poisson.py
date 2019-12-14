@@ -15,9 +15,8 @@ import matplotlib.pyplot as plt
 N=2
 n=N+1
 
-mesh=load_mesh("box002.msh")
+mesh=load_mesh("box001.msh")
 mesh.find_physical_coordinates(N)
-mesh.find_connectivities()
 mesh.establish_global_numbering()
 mesh.calc_geometric_factors()
 
