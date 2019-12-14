@@ -16,8 +16,8 @@ def elliptic_ax(mesh,p):
         pw=g[2,0,:]*px+g[2,1,:]*py+g[2,2,:]*pz
 
         p[e,:]=gradient_transpose(pu,pv,pw,Nq)
-        ## TODO mask
 
+    mesh.apply_mask(p)
     return p
 
 def elliptic_cg(mesh,b,tol=1e-12,maxit=100,verbose=0):

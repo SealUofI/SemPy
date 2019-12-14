@@ -15,8 +15,9 @@ def test_poisson_sin_3d():
 
     mesh=load_mesh("box001.msh")
     mesh.find_physical_coordinates(N)
-    mesh.find_connectivities()
+    mesh.establish_global_numbering()
     mesh.calc_geometric_factors()
+    mesh.setup_mask()
 
     G=mesh.geom[0,:]
     J=mesh.jaco[0,:]
@@ -24,11 +25,11 @@ def test_poisson_sin_3d():
 
     def mask(W):
         W=W.reshape((n,n,n))
-        W[0,:,:]=0
+        W[0  ,:,:]=0
         W[n-1,:,:]=0
-        W[:,0,:]=0
+        W[:,0  ,:]=0
         W[:,n-1,:]=0
-        W[:,:,0]=0
+        W[:,:,0  ]=0
         W[:,:,n-1]=0
         W=W.reshape((n*n*n,))
         return W
@@ -41,18 +42,21 @@ def test_poisson_sin_3d():
         Wz=G[2,0,:]*Ux+G[2,1,:]*Uy+G[2,2,:]*Uz
 
         W=gradient_transpose(Wx,Wy,Wz,n)
-        W=mask(W)
-        return W
+        return mask(W)
 
     X=mesh.xe[0,:]
     Y=mesh.ye[0,:]
     Z=mesh.ze[0,:]
 
     x_analytic=np.sin(np.pi*X)*np.sin(np.pi*Y)*np.sin(np.pi*Z)
-    x_analytic=mask(x_analytic.reshape((n*n*n,)))
+    x_analytic=mask(x_analytic)
+    x_analytic=x_analytic.reshape((n*n*n,))
 
-    b_analytic=3*np.pi*np.pi*np.sin(np.pi*X)*np.sin(np.pi*Y)*np.sin(np.pi*Z)
-    b_analytic=mask(b_analytic.reshape(n*n*n,)*B*J)
+    b_analytic=\
+        3*np.pi*np.pi*np.sin(np.pi*X)*np.sin(np.pi*Y)*np.sin(np.pi*Z)
+    b_analytic=b_analytic*B*J
+    b_analytic=mask(b_analytic)
+    b_analytic=b_analytic.reshape((n*n*n,))
 
     Minv_=1.0/(B*J)
     def Minv(r):

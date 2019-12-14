@@ -435,6 +435,8 @@ class Mesh:
         nelem=self.get_num_elems()
         Np=self.Np
 
+        x=x.reshape((nelem,Np))
+
         for e in range(nelem):
             for n in range(Np):
                 x[e,n]=self.mask[e,n]*x[e,n]
