@@ -14,7 +14,8 @@ def test_poisson_sin_3d():
     n=N+1
 
     mesh=load_mesh("box001.msh")
-    mesh.find_physical_nodes(N)
+    mesh.find_physical_coordinates(N)
+    mesh.find_connectivities()
     mesh.calc_geometric_factors()
 
     G=mesh.geom[0,:]

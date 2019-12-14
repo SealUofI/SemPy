@@ -15,16 +15,15 @@ import matplotlib.pyplot as plt
 N=5
 n=N+1
 
-mesh=load_mesh("box002.msh")
-mesh.find_physical_nodes(N)
+mesh=load_mesh("box004.msh")
+mesh.find_physical_coordinates(N)
+mesh.find_connectivities()
+mesh.establish_global_numbering()
 mesh.calc_geometric_factors()
 
-print(mesh.jaco[0,:])
 X=mesh.xe
 Y=mesh.ye
 Z=mesh.ze
-
-print("{} {} {}".format(X.shape,Y.shape,Z.shape))
 
 example_2d=0
 plot_on   =1

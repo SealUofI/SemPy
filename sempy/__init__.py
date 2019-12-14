@@ -1,1 +1,4 @@
-debug=0
+debug=1
+
+# TODO replace by MPI_Comm
+comm =0

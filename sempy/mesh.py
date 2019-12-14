@@ -4,7 +4,7 @@ import numpy as np
 
 from functools import cmp_to_key
 
-from sempy import debug
+from sempy import debug,comm,comm
 from sempy.quadrature import gauss_lobatto
 from sempy.interpolation import lagrange
 from sempy.kron import kron,kron_2d
@@ -13,6 +13,10 @@ from sempy.mass import reference_mass_matrix_3d,\
     reference_mass_matrix_2d
 from sempy.gradient import gradient,gradient_2d,\
     gradient_transpose,gradient_transpose_2d
+
+from gslib_wrapper import GS
+from gslib_wrapper import gs_double,gs_float,gs_long,gs_int
+from gslib_wrapper import gs_add,gs_min,gs_max
 
 class Face:
     def __init__(self,elem_id,face_id,nverts):
@@ -54,7 +58,6 @@ class Mesh:
         if not isinstance(fname,str):
             raise Exception("Only strings are allowed for file name")
         self.read(fname)
-        self.find_connectivities()
 
     def read(self,fname):
         meshin=meshio.read(fname)
@@ -70,18 +73,18 @@ class Mesh:
         assert self.num_elements>0
 
         ## number of vertices
-        self.num_vertices=len(self.elem_to_vert_map[0,:])
+        self.num_verts=len(self.elem_to_vert_map[0,:])
 
         ## dimension of the mesh
         assert len(meshin.points)>0
         self.ndim=len(meshin.points[0,:])
 
         ## setup face data
-        self.nfaces     =2*self.ndim
+        self.num_faces  =2*self.ndim
         self.nface_verts=self.ndim+1
         if self.ndim==3:
-            self.face_to_vert_map=np.array([[0,1,2,3],[0,1,5,4],\
-                [1,2,6,5],[2,3,7,6],[3,0,4,7],[4,5,6,7]])
+            self.face_to_vert_map=np.array([[0,1,5,4],[1,2,6,5],\
+                [2,3,7,6],[3,0,4,7],[0,1,2,3],[4,5,6,7]])
         else: #2D mesh
             raise Exception("2D not supported yet.")
 
@@ -91,7 +94,7 @@ class Mesh:
         self.z=[]
 
         for i in range(self.num_elements):
-            for j in range(self.num_vertices):
+            for j in range(self.num_verts):
                 self.x.append(meshin.points[\
                     self.elem_to_vert_map[i,j],0])
                 self.y.append(meshin.points[\
@@ -100,11 +103,11 @@ class Mesh:
                     self.z.append(meshin.points[\
                         self.elem_to_vert_map[i,j],2])
 
-        self.x=np.array(self.x).reshape((self.get_num_elements(),\
+        self.x=np.array(self.x).reshape((self.get_num_elems(),\
             self.get_num_verts()))
-        self.y=np.array(self.y).reshape((self.get_num_elements(),\
+        self.y=np.array(self.y).reshape((self.get_num_elems(),\
             self.get_num_verts()))
-        self.z=np.array(self.z).reshape((self.get_num_elements(),\
+        self.z=np.array(self.z).reshape((self.get_num_elems(),\
             self.get_num_verts()))
 
         ## TODO: Read in boundary faces
@@ -115,17 +118,17 @@ class Mesh:
 
         self.num_boundary_faces=len(self.boundary_faces)
 
-    def get_num_elements(self):
+    def get_num_elems(self):
         return self.num_elements
 
     def get_ndim(self):
         return self.ndim
 
     def get_num_faces(self):
-        return self.nfaces
+        return self.num_faces
 
     def get_num_verts(self):
-        return self.num_vertices
+        return self.num_verts
 
     def get_face_to_vert_map(self):
         return self.face_to_vert_map
@@ -137,7 +140,7 @@ class Mesh:
         return self.nface_verts
 
     def find_connectivities(self):
-        nelems     =self.get_num_elements()
+        nelems     =self.get_num_elems()
         nfaces     =self.get_num_faces()
         nface_verts=self.get_num_face_verts()
         if debug:
@@ -163,8 +166,9 @@ class Mesh:
             if not compare_verts(faces[i],faces[i+1]):
                 if debug:
                     print("faces {}/{} and {}/{} match.".format(\
-                        faces[i  ].elem_id,faces[i  ].face_id,
-                        faces[i+1].elem_id,faces[i+1].face_id))
+                        faces[i  ].face_id,faces[i  ].elem_id,
+                        faces[i+1].face_id,faces[i+1].elem_id))
+
                 faces[i  ].neighbor_elem_id=faces[i+1].elem_id
                 faces[i  ].neighbor_face_id=faces[i+1].face_id
                 faces[i+1].neighbor_elem_id=faces[i  ].elem_id
@@ -186,7 +190,7 @@ class Mesh:
         self.elem_to_face_map=\
             np.array(self.elem_to_face_map).reshape((nelems,nfaces))
 
-    def find_physical_nodes(self,N):
+    def find_physical_coordinates(self,N):
         self.N  =N;
         self.Nq =N+1;
 
@@ -197,6 +201,15 @@ class Mesh:
             self.Nfp=(N+1)
             self.Np =(N+1)*(N+1)
 
+        if self.get_ndim()==3:
+            offset=N*self.Nfp
+            self.vertex_ids=np.array(\
+                [0,self.Nq-1,self.Nfp-1-N,self.Nfp-1,
+                 offset,offset+self.Nq-1,offset+self.Nfp-1-N,\
+                    offset+self.Nfp-1])
+        else:
+            raise Exception("vertex ids are not calculated for 2D")
+
         z_1,jnk=gauss_lobatto(1)
         z_N,jnk=gauss_lobatto(N)
         J  =lagrange(z_N,z_1)
@@ -206,14 +219,17 @@ class Mesh:
         self.ze=[]
 
         if self.ndim==3:
-            for e in range(self.get_num_elements()):
+            for e in range(self.get_num_elems()):
                 x=self.x[e,:]
                 y=self.y[e,:]
                 z=self.z[e,:]
 
-                xx=np.array([x[0],x[1],x[3],x[2],x[4],x[5],x[7],x[6]])
-                yy=np.array([y[0],y[1],y[3],y[2],y[4],y[5],y[7],y[6]])
-                zz=np.array([z[0],z[1],z[3],z[2],z[4],z[5],z[7],z[6]])
+                xx=np.array([x[0],x[1],x[3],x[2],x[4],\
+                    x[5],x[7],x[6]])
+                yy=np.array([y[0],y[1],y[3],y[2],y[4],\
+                    y[5],y[7],y[6]])
+                zz=np.array([z[0],z[1],z[3],z[2],z[4],\
+                    z[5],z[7],z[6]])
 
                 xe=kron(J,J,J,xx)
                 ye=kron(J,J,J,yy)
@@ -223,7 +239,7 @@ class Mesh:
                 self.ye.append(ye)
                 self.ze.append(ze)
         else:
-            for e in range(self.get_num_elements()):
+            for e in range(self.get_num_elems()):
                 x=self.x[e,:]
                 y=self.y[e,:]
 
@@ -238,6 +254,9 @@ class Mesh:
         self.xe=np.array(self.xe)
         self.ye=np.array(self.ye)
         self.ze=np.array(self.ze)
+
+    def establish_global_numbering(self):
+        pass
 
     def get_x(self):
         return self.xe
@@ -256,7 +275,7 @@ class Mesh:
 
         if self.get_ndim()==3:
             self.B=reference_mass_matrix_3d(n-1)
-            for e in range(self.get_num_elements()):
+            for e in range(self.get_num_elems()):
                 xr,xs,xt=gradient(self.xe[e,:],n)
                 yr,ys,yt=gradient(self.ye[e,:],n)
                 zr,zs,zt=gradient(self.ze[e,:],n)
@@ -297,7 +316,7 @@ class Mesh:
                 self.geom.append(g)
         else:
             self.B=reference_mass_matrix_2d(n-1)
-            for e in range(self.get_num_elements()):
+            for e in range(self.get_num_elems()):
                 Xr,xs=gradient_2d(self.xe[e,:],n)
                 yr,ys=gradient_2d(self.ye[e,:],n)
 
@@ -324,6 +343,21 @@ class Mesh:
 
         self.geom=np.array(self.geom)
         self.jaco=np.array(self.jaco)
+
+    def setup_gather_scatter(self):
+#        nelem=self.get_num_elems()
+#        nvert=self.get_num_verts()
+#        global_vertex_ids=np.zeros((nelem,nvert))
+#        for e in range(nelem):
+#            for v in range(nvert):
+#                global_vertex_ids[e,v]=e*self.Np+self.vertex_ids[v]
+#        gs=GS(comm)
+#        gs.gs(global_vertex_ids)
+#
+#        for elem in range(nelem):
+#            for n in range(self.Np):
+#                global_ids[elem,n]=elem*self.Np+n+1
+        pass
 
 def load_mesh(fname):
     dir_path=os.path.dirname(os.path.realpath(__file__))
