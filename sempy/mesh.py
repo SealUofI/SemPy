@@ -18,6 +18,31 @@ from gslib_wrapper import GS
 from gslib_wrapper import gs_double,gs_float,gs_long,gs_int
 from gslib_wrapper import gs_add,gs_min,gs_max
 
+class Point:
+    def __init__(self,x,y,z,sequence_id):
+        self.x=x
+        self.y=y
+        self.z=z
+        self.sequence_id=sequence_id
+        self.global_id=-1
+
+def compare_points(p1,p2):
+    if p1.x < p2.x: return -1
+    if p1.x > p2.x: return  1
+    if p1.y < p2.y: return -1
+    if p1.y > p2.y: return  1
+    if p1.z < p2.z: return -1
+    if p1.z > p2.z: return  1
+    return 0
+
+def get_distance(p1,p2):
+    return (p1.x-p2.x)**2+(p1.y-p2.y)**2+(p1.z-p2.z)**2
+
+def compare_sequence_id(p1,p2):
+    if p1.sequence_id < p2.sequence_id: return -1
+    if p1.sequence_id > p2.sequence_id: return  1
+    return 0
+
 class Face:
     def __init__(self,elem_id,face_id,nverts):
         self.elem_id=elem_id
@@ -256,7 +281,39 @@ class Mesh:
         self.ze=np.array(self.ze)
 
     def establish_global_numbering(self):
-        pass
+        nelem=self.get_num_elems()
+        Np=self.Np
+
+        points=[]
+        count =0
+        for e in range(nelem):
+            for n in range(Np):
+                points.append(Point(self.xe[e,n],self.ye[e,n],\
+                    self.ze[e,n],count))
+                count+=1
+
+        points=sorted(points,key=cmp_to_key(compare_points))
+
+        tol=1e-12
+        size=nelem*Np
+        global_id=1
+        for i in range(size-1):
+            points[i].global_id=global_id
+            if get_distance(points[i],points[i+1])>tol:
+                global_id+=1
+        points[size-1].global_id=global_id
+
+        points=sorted(points,key=cmp_to_key(compare_sequence_id))
+
+        count=0
+        self.global_id=np.zeros((nelem,Np),dtype=np.int32)
+        for e in range(nelem):
+            for n in range(Np):
+                self.xe[e,n]       =points[count].x
+                self.ye[e,n]       =points[count].y
+                self.ze[e,n]       =points[count].z
+                self.global_id[e,n]=points[count].global_id
+                count+=1
 
     def get_x(self):
         return self.xe
