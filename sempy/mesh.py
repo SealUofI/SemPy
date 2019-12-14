@@ -137,13 +137,7 @@ class Mesh:
         self.z=np.array(self.z).reshape((self.get_num_elems(),\
             self.get_num_verts()))
 
-        ## TODO: Read in boundary faces
-        if self.ndim==3:
-            self.boundary_faces=meshin.cells['quad']
-        else:
-            self.boundary_faces=meshin.cells['line']
-
-        self.num_boundary_faces=len(self.boundary_faces)
+        ## TODO: Read in boundary faces from mesh
 
     def get_num_elems(self):
         return self.num_elements
@@ -406,6 +400,44 @@ class Mesh:
         self.gs.gs(x,gs_double,gs_add)
 
         x=x.reshape((nelem,Np))
+
+        return x
+
+    def setup_mask(self):
+        xmin=np.min(self.xe)
+        xmax=np.max(self.xe)
+        ymin=np.min(self.ye)
+        ymax=np.max(self.ye)
+        zmin=np.min(self.ze)
+        zmax=np.max(self.ze)
+
+        nelem=self.get_num_elems()
+        Np=self.Np
+        tol=1e-8
+
+        self.mask=np.ones((nelem,Np))
+        for e in range(nelem):
+            for n in range(Np):
+                if abs(self.xe[e,n]-xmin)<tol:
+                    self.mask[e,n]=0
+                if abs(self.xe[e,n]-xmax)<tol:
+                    self.mask[e,n]=0
+                if abs(self.ye[e,n]-ymin)<tol:
+                    self.mask[e,n]=0
+                if abs(self.ye[e,n]-ymax)<tol:
+                    self.mask[e,n]=0
+                if abs(self.ze[e,n]-zmin)<tol:
+                    self.mask[e,n]=0
+                if abs(self.ze[e,n]-zmax)<tol:
+                    self.mask[e,n]=0
+
+    def apply_mask(self,x):
+        nelem=self.get_num_elems()
+        Np=self.Np
+
+        for e in range(nelem):
+            for n in range(Np):
+                x[e,n]=self.mask[e,n]*x[e,n]
 
         return x
 

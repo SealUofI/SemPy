@@ -12,17 +12,21 @@ from sempy.iterative import cg,pcg
 from mayavi import mlab
 import matplotlib.pyplot as plt
 
-N=2
+N=3
 n=N+1
 
-mesh=load_mesh("box001.msh")
+mesh=load_mesh("box002.msh")
 mesh.find_physical_coordinates(N)
 mesh.establish_global_numbering()
 mesh.calc_geometric_factors()
+mesh.setup_mask()
 
 X=mesh.xe
 Y=mesh.ye
 Z=mesh.ze
+
+u=0*X+1
+u=mesh.apply_mask(u)
 
 example_2d=0
 plot_on   =1
@@ -32,7 +36,7 @@ if plot_on:
       print("N/A")
     else:
         mlab.figure()
-        mlab.points3d(X,Y,Z,X,\
-            scale_mode="none",scale_factor=0.1)
+        mlab.points3d(X,Y,Z,u,\
+            scale_mode="scalar",scale_factor=0.05)
         mlab.axes()
         mlab.show()
