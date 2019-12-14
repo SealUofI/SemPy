@@ -6,6 +6,48 @@ import pyopencl.clrandom
 from loopy.version import LOOPY_USE_LANGUAGE_VERSION_2018_2
 from loopy.kernel.data import AddressSpace
 
+def gen_gather_scatter_knl():
+    knl = lp.make_kernel(
+        """
+        {[k,i,j]: 0<=i,j<maxIter and 1<=k<n}
+        """,
+        """
+        #start(k) := gatherStarts[k-1]
+        #end(k) := gatherStarts[k]
+        #diff(k) := end(k) - start(k)
+        #rhs := sum(i, q_in[gatherIds[i]])
+        for k
+            <> start = gatherStarts[k-1]
+            <> end = gatherStarts[k]
+            <> diff = end - start
+            <> gq = 0
+            for i
+                if i < diff
+                    gq = gq + q_in[gatherIds[start + i]] {id=limit1}
+                end
+            end
+            #<> start = gatherStarts[k-1] {id=limit1}
+            #<> end = gatherStarts[k] {id=limit2}
+            #with {dep=limit*}
+            for j
+                if i < diff 
+                    q_out[gatherIds[start + j]] = gq
+                end
+            end
+            
+            #q_out[gatherIds[j]] = rhs
+
+            #end
+        end
+        """,
+        assumptions="maxIter > 0 and n > 1",
+        default_offset=None,
+        name="gather_scatter"
+    )
+    #knl = lp.precompute(knl, ["rhs"])
+    
+    return knl
+
 def gen_CG_iteration():
     knl = lp.make_kernel(
         """
@@ -238,14 +280,23 @@ if __name__ == "__main__":
     ctx = cl.create_some_context(interactive=True)
     queue = cl.CommandQueue(ctx)
 
+    """
     wip = gen_weighted_inner_product_knl()
     print(wip)
     w_nrm = gen_weighted_norm_knl()
     print(w_nrm)
-
+    """
     
-    update = gen_vector_update_knl()
-    print(update)
+    gs = gen_gather_scatter_knl()
+    print(gs)
+    gs = lp.set_options(gs, "write_code")
+
+    evt, output = gs(queue, maxIter=2, gatherStarts=np.array([0,2,4], dtype=np.int32), \
+            gatherIds=np.array([0,1,2,3],dtype=np.int32), q_in=np.array([0.5,0.5,1.0,1.0]))
+
+    #evt, output = gs(queue, start=np.array([0,2]), end=np.array([2,4]), \
+    #        gatherIds=np.array([0,1,2,3]), q_in=np.array([0.5,0.5,1.0,1.0]))
+    print(output)
     """
     #norm = gen_norm_knl(100)
     #print(norm)
