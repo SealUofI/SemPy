@@ -257,24 +257,24 @@ class Mesh:
         if self.get_ndim()==3:
             self.B=reference_mass_matrix_3d(n-1)
             for e in range(self.get_num_elements()):
-                Xr,Xs,Xt=gradient(self.xe[e,:],n)
-                Yr,Ys,Yt=gradient(self.ye[e,:],n)
-                Zr,Zs,Zt=gradient(self.ze[e,:],n)
+                xr,xs,xt=gradient(self.xe[e,:],n)
+                yr,ys,yt=gradient(self.ye[e,:],n)
+                zr,zs,zt=gradient(self.ze[e,:],n)
 
-                J=Xr*(Ys*Zt-Yt*Zs)-Yr*(Xs*Zt-Xt*Zs)+Zr*(Xs*Yt-Ys*Xt)
+                J=xr*(ys*zt-yt*zs)-yr*(xs*zt-xt*zs)+zr*(xs*yt-ys*xt)
                 self.jaco.append(J)
 
-                rx=(Ys*Zt-Yt*Zs)/J
-                sx=(Yt*Zr-Yr*Zt)/J
-                tx=(Yr*Zs-Ys*Zr)/J
+                rx=(ys*zt-yt*zs)/J
+                sx=(yt*zr-yr*zt)/J
+                tx=(yr*zs-ys*zr)/J
 
-                ry=-(Zt*Xs-Zs*Xt)/J
-                sy=-(Zr*Xt-Zt*Xr)/J
-                ty=-(Zs*Xr-Zr*Xs)/J
+                ry=-(zt*xs-zs*xt)/J
+                sy=-(zr*xt-zt*xr)/J
+                ty=-(zs*xr-zr*xs)/J
 
-                rz= (Xs*Yt-Xt*Ys)/J
-                sz=-(Xr*Yt-Xt*Yr)/J
-                tz= (Xr*Ys-Xs*Yr)/J
+                rz= (xs*yt-xt*ys)/J
+                sz=-(xr*yt-xt*yr)/J
+                tz= (xr*ys-xs*yr)/J
 
                 g11=rx*rx+ry*ry+rz*rz
                 g12=rx*sx+ry*sy+rz*sz
@@ -298,16 +298,16 @@ class Mesh:
         else:
             self.B=reference_mass_matrix_2d(n-1)
             for e in range(self.get_num_elements()):
-                Xr,Xs=gradient_2d(self.xe[e,:],n)
-                Yr,Ys=gradient_2d(self.ye[e,:],n)
+                Xr,xs=gradient_2d(self.xe[e,:],n)
+                yr,ys=gradient_2d(self.ye[e,:],n)
 
-                J=Xr*Ys-Yr*Xs
+                J=Xr*ys-yr*xs
                 self.jaco.append(J)
 
-                rx= Ys/J
-                sx=-Yr/J
+                rx= ys/J
+                sx=-yr/J
 
-                ry=-Xs/J
+                ry=-xs/J
                 sy= Xr/J
 
                 g11=rx*rx+ry*ry
