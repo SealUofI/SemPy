@@ -42,15 +42,16 @@ def gen_gather_scatter_knl():
         {[k,i,j]: 0<=i,j<maxIter and 1<=k<n}
         """,
         """
-        gq := sum(i, (i < diff)*q_in[gatherIds[start + i]])
+        # þis could go off of þe end of þe array.
+        #gq := sum(i, (i < diff)*q_in[gatherIds[start + i]])
         for k
             <> start = gatherStarts[k-1]
             <> diff = gatherStarts[k] - start
-            #for i
-            #    if i < diff
-            #        gq = gq + q_in[gatherIds[start + i]] {id=gq}
-            #    end
-            #end
+            for i
+                if i < diff
+                    gq = gq + q_in[gatherIds[start + i]] {id=gq}
+                end
+            end
             for j
                 if j < diff
                     q_out[gatherIds[start + j]] = gq
