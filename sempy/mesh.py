@@ -276,9 +276,9 @@ class Mesh:
 
         self.geom = []
         self.jaco = []
+        self.mass = []
 
         if self.get_ndim()==3:
-            self.B=reference_mass_matrix_3d(n-1)
             for e in range(self.get_num_elems()):
                 xr,xs,xt=gradient(self.xe[e,:],n)
                 yr,ys,yt=gradient(self.ye[e,:],n)
@@ -306,20 +306,21 @@ class Mesh:
                 g23=sx*tx+sy*ty+sz*tz
                 g33=tx*tx+ty*ty+tz*tz
 
-                g=np.zeros((3,3,g11.size))
-                g[0,0,:]=g11*self.B*J
-                g[0,1,:]=g12*self.B*J
-                g[0,2,:]=g13*self.B*J
-                g[1,0,:]=g12*self.B*J
-                g[1,1,:]=g22*self.B*J
-                g[1,2,:]=g23*self.B*J
-                g[2,0,:]=g13*self.B*J
-                g[2,1,:]=g23*self.B*J
-                g[2,2,:]=g33*self.B*J
+                B=reference_mass_matrix_3d(n-1)
+                self.mass.append(B)
 
+                g=np.zeros((3,3,g11.size))
+                g[0,0,:]=g11*B*J
+                g[0,1,:]=g12*B*J
+                g[0,2,:]=g13*B*J
+                g[1,0,:]=g12*B*J
+                g[1,1,:]=g22*B*J
+                g[1,2,:]=g23*B*J
+                g[2,0,:]=g13*B*J
+                g[2,1,:]=g23*B*J
+                g[2,2,:]=g33*B*J
                 self.geom.append(g)
         else:
-            self.B=reference_mass_matrix_2d(n-1)
             for e in range(self.get_num_elems()):
                 Xr,xs=gradient_2d(self.xe[e,:],n)
                 yr,ys=gradient_2d(self.ye[e,:],n)
@@ -337,16 +338,19 @@ class Mesh:
                 g12=rx*sx+ry*sy
                 g22=sx*sx+sy*sy
 
-                g=np.zeros((2,2,g11.size))
-                g[0,0,:]=g11*self.B*J
-                g[0,1,:]=g12*self.B*J
-                g[1,0,:]=g12*self.B*J
-                g[1,1,:]=g22*self.B*J
+                B=reference_mass_matrix_2d(n-1)
+                self.mass.append(B)
 
+                g=np.zeros((2,2,g11.size))
+                g[0,0,:]=g11*B*J
+                g[0,1,:]=g12*B*J
+                g[1,0,:]=g12*B*J
+                g[1,1,:]=g22*B*J
                 self.geom.append(g)
 
         self.geom=np.array(self.geom)
         self.jaco=np.array(self.jaco)
+        self.mass=np.array(self.mass)
 
     def establish_global_numbering(self):
         nelem=self.get_num_elems()
@@ -431,17 +435,51 @@ class Mesh:
                 if abs(self.ze[e,n]-zmax)<tol:
                     self.mask[e,n]=0
 
+        self.mask=self.mask.reshape((nelem*Np,))
+
     def apply_mask(self,x):
         nelem=self.get_num_elems()
         Np=self.Np
 
-        x=x.reshape((nelem,Np))
-
-        for e in range(nelem):
-            for n in range(Np):
-                x[e,n]=self.mask[e,n]*x[e,n]
+        for i in range(nelem*Np):
+            x[i]=self.mask[i]*x[i]
 
         return x
+
+    def get_x(self):
+        nelem=self.get_num_elems()
+        Np=self.Np
+        return self.xe.reshape((nelem*Np,))
+
+    def get_y(self):
+        nelem=self.get_num_elems()
+        Np=self.Np
+        return self.ye.reshape((nelem*Np,))
+
+    def get_z(self):
+        nelem=self.get_num_elems()
+        Np=self.Np
+        return self.ze.reshape((nelem*Np,))
+
+    def get_rmult(self):
+        nelem=self.get_num_elems()
+        Np=self.Np
+        return self.rmult.reshape((nelem*Np,))
+
+    def get_geom(self):
+        nelem=self.get_num_elems()
+        Np=self.Np
+        return np.array(self.geom).reshape((self.ndim,self.ndim,nelem*Np))
+
+    def get_jaco(self):
+        nelem=self.get_num_elems()
+        Np=self.Np
+        return np.array(self.jaco).reshape((nelem*Np,))
+
+    def get_mass(self):
+        nelem=self.get_num_elems()
+        Np=self.Np
+        return np.array(self.mass).reshape((nelem*Np,))
 
 def load_mesh(fname):
     dir_path=os.path.dirname(os.path.realpath(__file__))

@@ -1,12 +1,14 @@
 import numpy as np
 
+from sempy.gradient import gradient,gradient_2d,\
+    gradient_transpose,gradient_transpose_2d
+
 def elliptic_ax(mesh,p):
     nelem=mesh.get_num_elems()
     Np=mesh.Np
     Nq=mesh.Nq
 
-    rmult=self.rmult
-
+    p=p.reshape((nelem,Np))
     for e in range(nelem):
         g=mesh.geom[e,:]
         px,py,pz=gradient(p[e,:],Nq)
@@ -18,29 +20,24 @@ def elliptic_ax(mesh,p):
         p[e,:]=gradient_transpose(pu,pv,pw,Nq)
 
     mesh.apply_mask(p)
-    return p
+    return p.reshape((nelem*Np,))
 
 def elliptic_cg(mesh,b,tol=1e-12,maxit=100,verbose=0):
-    assert b.ndim==1
-
-    n=b.size
-    x=np.zeros((n,),dtype=np.float64)
-
-    nelem=mesh.get_num_elems()
-    Np=mesh.Np
-    rmult=self.rmult
-
-    norm_b=np.dot(np.multipy(rmult,b),b)
+    rmult=mesh.get_rmult()
+    norm_b=np.dot(np.multiply(rmult,b),b)
     TOL=max(tol*tol*norm_b,tol*tol)
 
     r=b
     rdotr=np.dot(np.multiply(rmult,r),r)
-
-    niter=0
     if verbose:
         print('Initial rnorm={}'.format(rdotr))
+
+    x=0*b
+    niter=0
     if rdotr<1.e-20:
         return x,niter
+
+    return
 
     p=r
     while niter<maxit and rdotr>TOL:

@@ -32,8 +32,8 @@ def cg(A,b,tol=1e-12,maxit=100,verbose=0):
         rdotr=np.dot(r,r)
         beta=rdotr/rdotr0
         if verbose:
-            print("niter={} r0={} r1={} alpha={} beta={} pap={}".format( \
-                niter,rdotr0,rdotr,alpha,beta,pAp))
+            print("niter={} r0={} r1={} alpha={} beta={} pap={}"\
+                .format(niter,rdotr0,rdotr,alpha,beta,pAp))
 
         p=r+beta*p
         niter=niter+1
