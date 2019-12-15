@@ -36,9 +36,9 @@ def test_single_element_pcg_sin_3d():
     def Ax(x):
         Ux,Uy,Uz=gradient(x,n)
 
-        Wx=G[0,0,:]*Ux+G[0,1,:]*Uy+G[0,2,:]*Uz
-        Wy=G[1,0,:]*Ux+G[1,1,:]*Uy+G[1,2,:]*Uz
-        Wz=G[2,0,:]*Ux+G[2,1,:]*Uy+G[2,2,:]*Uz
+        Wx=G[0,0,0,:]*Ux+G[0,0,1,:]*Uy+G[0,0,2,:]*Uz
+        Wy=G[0,1,0,:]*Ux+G[0,1,1,:]*Uy+G[0,1,2,:]*Uz
+        Wz=G[0,2,0,:]*Ux+G[0,2,1,:]*Uy+G[0,2,2,:]*Uz
 
         W=gradient_transpose(Wx,Wy,Wz,n)
         return mask(W)
@@ -90,11 +90,12 @@ def test_single_element_cg_sin_3d():
     def Ax(x):
         Ux,Uy,Uz=gradient(x,n)
 
-        Wx=G[0,0,:]*Ux+G[0,1,:]*Uy+G[0,2,:]*Uz
-        Wy=G[1,0,:]*Ux+G[1,1,:]*Uy+G[1,2,:]*Uz
-        Wz=G[2,0,:]*Ux+G[2,1,:]*Uy+G[2,2,:]*Uz
+        Wx=G[0,0,0,:]*Ux+G[0,0,1,:]*Uy+G[0,0,2,:]*Uz
+        Wy=G[0,1,0,:]*Ux+G[0,1,1,:]*Uy+G[0,1,2,:]*Uz
+        Wz=G[0,2,0,:]*Ux+G[0,2,1,:]*Uy+G[0,2,2,:]*Uz
 
         W=gradient_transpose(Wx,Wy,Wz,n)
+
         return mask(W)
 
     X=mesh.get_x()
@@ -112,7 +113,7 @@ def test_single_element_cg_sin_3d():
 
     assert np.allclose(x,x_cg,1e-8)
 
-def test_multi_element_poisson_sin_3d():
+def test_multi_element_cg_sin_3d():
     N=10
     n=N+1
 
@@ -139,10 +140,9 @@ def test_multi_element_poisson_sin_3d():
     b=b*B*J
     b=mesh.apply_mask(b)
 
-    elliptic_cg(mesh,b,tol=1e-8,maxit=10,verbose=1)
-#    x,niter=elliptic_cg(mesh,b,tol=1e-8,maxit=10,verbose=1)
-#
-#    assert np.allclose(x,x_analytic,1e-8)
+    x_cg,niter=elliptic_cg(mesh,b,tol=1e-8,maxit=1000,verbose=1)
+
+    assert np.allclose(x,x_cg,1e-8)
 
 from sempy.meshes.box import box_ab_2d
 

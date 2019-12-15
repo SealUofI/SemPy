@@ -469,7 +469,7 @@ class Mesh:
     def get_geom(self):
         nelem=self.get_num_elems()
         Np=self.Np
-        return np.array(self.geom).reshape((self.ndim,self.ndim,nelem*Np))
+        return np.array(self.geom).reshape((nelem,self.ndim,self.ndim,Np))
 
     def get_jaco(self):
         nelem=self.get_num_elems()

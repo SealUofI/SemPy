@@ -4,26 +4,28 @@ from sempy.gradient import gradient,gradient_2d,\
     gradient_transpose,gradient_transpose_2d
 
 def elliptic_ax(mesh,p):
+    g=mesh.get_geom()
     nelem=mesh.get_num_elems()
     Np=mesh.Np
     Nq=mesh.Nq
 
-    p=p.reshape((nelem,Np))
+    p_=p.reshape((nelem,Np))
+    ap=0*p_
     for e in range(nelem):
-        g=mesh.geom[e,:]
-        px,py,pz=gradient(p[e,:],Nq)
+        px,py,pz=gradient(p_[e,:],Nq)
 
-        pu=g[0,0,:]*px+g[0,1,:]*py+g[0,2,:]*pz
-        pv=g[1,0,:]*px+g[1,1,:]*py+g[1,2,:]*pz
-        pw=g[2,0,:]*px+g[2,1,:]*py+g[2,2,:]*pz
+        apx=g[e,0,0,:]*px+g[e,0,1,:]*py+g[e,0,2,:]*pz
+        apy=g[e,1,0,:]*px+g[e,1,1,:]*py+g[e,1,2,:]*pz
+        apz=g[e,2,0,:]*px+g[e,2,1,:]*py+g[e,2,2,:]*pz
 
-        p[e,:]=gradient_transpose(pu,pv,pw,Nq)
+        ap[e,:]=gradient_transpose(apx,apy,apz,Nq)
 
-    mesh.apply_mask(p)
-    return p.reshape((nelem*Np,))
+    ap=ap.reshape((nelem*Np,))
+    return mesh.apply_mask(ap)
 
 def elliptic_cg(mesh,b,tol=1e-12,maxit=100,verbose=0):
     rmult=mesh.get_rmult()
+
     norm_b=np.dot(np.multiply(rmult,b),b)
     TOL=max(tol*tol*norm_b,tol*tol)
 
@@ -37,15 +39,13 @@ def elliptic_cg(mesh,b,tol=1e-12,maxit=100,verbose=0):
     if rdotr<1.e-20:
         return x,niter
 
-    return
-
     p=r
     while niter<maxit and rdotr>TOL:
-        # TODO: do this
         Ap=elliptic_ax(mesh,p)
         mesh.dssum(Ap)
 
         pAp=np.dot(np.multiply(rmult,p),Ap)
+        pAp=np.dot(p,Ap)
 
         alpha=rdotr/pAp
 
@@ -54,7 +54,6 @@ def elliptic_cg(mesh,b,tol=1e-12,maxit=100,verbose=0):
 
         rdotr0=rdotr
         rdotr=np.dot(np.multiply(rmult,r),r)
-
         beta=rdotr/rdotr0
 
         if verbose:
