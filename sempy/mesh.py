@@ -390,20 +390,12 @@ class Mesh:
         self.gs=GS(comm)
         self.gs.setup(self.global_id.reshape((size,)))
 
-        self.rmult=np.ones((nelem*Np,),dtype=np.float64)
+        self.rmult=np.ones((size,),dtype=np.float64)
         self.gs.gs(self.rmult,gs_double,gs_add)
         self.rmult=1.0/self.rmult
-        self.rmult=self.rmult.reshape((nelem,Np))
 
     def dssum(self,x):
-        nelem=self.get_num_elems()
-        Np=self.Np
-
-        x=x.reshape((nelem*Np,))
-
         self.gs.gs(x,gs_double,gs_add)
-
-        x=x.reshape((nelem,Np))
 
         return x
 
@@ -462,9 +454,7 @@ class Mesh:
         return self.ze.reshape((nelem*Np,))
 
     def get_rmult(self):
-        nelem=self.get_num_elems()
-        Np=self.Np
-        return self.rmult.reshape((nelem*Np,))
+        return self.rmult
 
     def get_geom(self):
         nelem=self.get_num_elems()

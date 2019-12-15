@@ -109,7 +109,7 @@ def test_single_element_cg_sin_3d():
     b=b*B*J
     b=mask(b)
 
-    x_cg,niter=cg(Ax,b,tol=1e-8,maxit=1000,verbose=1)
+    x_cg,niter=cg(Ax,b,tol=1e-8,maxit=100,verbose=0)
 
     assert np.allclose(x,x_cg,1e-8)
 
@@ -117,7 +117,7 @@ def test_multi_element_cg_sin_3d():
     N=10
     n=N+1
 
-    mesh=load_mesh("box001.msh")
+    mesh=load_mesh("box004.msh")
     mesh.find_physical_coordinates(N)
     mesh.establish_global_numbering()
     mesh.calc_geometric_factors()
@@ -138,9 +138,10 @@ def test_multi_element_cg_sin_3d():
 
     b=3*np.pi*np.pi*np.sin(np.pi*X)*np.sin(np.pi*Y)*np.sin(np.pi*Z)
     b=b*B*J
+    b=mesh.dssum(b)
     b=mesh.apply_mask(b)
 
-    x_cg,niter=elliptic_cg(mesh,b,tol=1e-8,maxit=1000,verbose=1)
+    x_cg,niter=elliptic_cg(mesh,b,tol=1e-8,maxit=1000,verbose=0)
 
     assert np.allclose(x,x_cg,1e-8)
 

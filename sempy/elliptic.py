@@ -42,12 +42,10 @@ def elliptic_cg(mesh,b,tol=1e-12,maxit=100,verbose=0):
     p=r
     while niter<maxit and rdotr>TOL:
         Ap=elliptic_ax(mesh,p)
-        mesh.dssum(Ap)
-
-        pAp=np.dot(np.multiply(rmult,p),Ap)
-        pAp=np.dot(p,Ap)
-
+        pAp=np.dot(Ap,p)
         alpha=rdotr/pAp
+
+        Ap=mesh.dssum(Ap)
 
         x=x+alpha*p
         r=r-alpha*Ap
