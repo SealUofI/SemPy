@@ -6,24 +6,56 @@ import pyopencl.clrandom
 from loopy.version import LOOPY_USE_LANGUAGE_VERSION_2018_2
 from loopy.kernel.data import AddressSpace
 
+def python_gather_scatter(gatherIds, gatherStarts, maxIter, q_in):
+    q_out = np.zeros_like(q_in)
+    n = gatherStarts.shape[0]
+    for k in range(1,n):
+        start = gatherStarts[k-1]
+        diff = gatherStarts[k] - start
+        gq = 0
+        for i in range(maxIter):
+            if i < diff:
+                gq += q_in[gatherIds[start + i]]
+        for j in range(maxIter):
+            if j < diff:
+                q_out[gatherIds[start + j]] = gq
+    return q_out
+
+
+def gen_zero_boundary_knl():
+    knl = lp.make_kernel(
+        """
+        {[i]: 0<=i<n}
+        """,
+        """
+        dofs[boundaryIndices[i]] = 0
+        """,
+        assumptions="n > 0",
+        default_offset=None,
+        name="zero_boundary"
+    )
+    
+    return knl
+
+
 def gen_gather_scatter_knl():
     knl = lp.make_kernel(
         """
         {[k,i,j]: 0<=i,j<maxIter and 1<=k<n}
         """,
         """
+        gq := sum(i, (i < diff)*q_in[gatherIds[start + i]])
         for k
             <> start = gatherStarts[k-1]
             <> diff = gatherStarts[k] - start
-            <> gq = 0 {id=gq1}
-            for i
-                if i < diff
-                    gq = gq + q_in[gatherIds[start + i]] {id=gq2}
-                end
-            end
+            #for i
+            #    if i < diff
+            #        gq = gq + q_in[gatherIds[start + i]] {id=gq}
+            #    end
+            #end
             for j
                 if j < diff
-                    q_out[gatherIds[start + j]] = gq {dep=gq*}
+                    q_out[gatherIds[start + j]] = gq
                 end
             end
         end
@@ -32,7 +64,7 @@ def gen_gather_scatter_knl():
         default_offset=None,
         name="gather_scatter"
     )
-    #knl = lp.precompute(knl, ["rhs"])
+    knl = lp.precompute(knl, ["gq"])
     
     return knl
 
@@ -268,23 +300,36 @@ if __name__ == "__main__":
     ctx = cl.create_some_context(interactive=True)
     queue = cl.CommandQueue(ctx)
 
+    zeroBoundary = gen_zero_boundary_knl()
+    dofs = np.random.rand(10)
+    boundaryIndices = np.array([0,5], dtype=np.int32)
+    result = zeroBoundary(queue, dofs=dofs, boundaryIndices=boundaryIndices)
+    print(result)
+
     """
     wip = gen_weighted_inner_product_knl()
     print(wip)
     w_nrm = gen_weighted_norm_knl()
     print(w_nrm)
     """
-    
+    """
     gs = gen_gather_scatter_knl()
     print(gs)
     gs = lp.set_options(gs, "write_code")
 
-    evt, output = gs(queue, maxIter=2, gatherStarts=np.array([0,2,4], dtype=np.int32), \
-            gatherIds=np.array([0,1,2,3],dtype=np.int32), q_in=np.array([0.5,0.5,1.0,1.0]))
+    maxIter = 1
+    # Note that the last entry mote be the length of the list
+    gatherStarts=np.array([0,1,2,3,4], dtype=np.int32)
+    gatherIds = np.array([0,1,2,3], dtype=np.int32)
+    q_in = np.array([0.5,0.5,1.0,1.0])
 
-    #evt, output = gs(queue, start=np.array([0,2]), end=np.array([2,4]), \
-    #        gatherIds=np.array([0,1,2,3]), q_in=np.array([0.5,0.5,1.0,1.0]))
+    evt, output = gs(queue, maxIter=maxIter, gatherStarts=gatherStarts, \
+            gatherIds=gatherIds, q_in=q_in,q_out=np.empty_like(q_in))
     print(output)
+
+    result =  python_gather_scatter(gatherIds, gatherStarts, maxIter, q_in)
+    print(result)
+    """
     """
     #norm = gen_norm_knl(100)
     #print(norm)
