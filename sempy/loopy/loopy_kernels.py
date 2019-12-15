@@ -6,22 +6,6 @@ import pyopencl.clrandom
 from loopy.version import LOOPY_USE_LANGUAGE_VERSION_2018_2
 from loopy.kernel.data import AddressSpace
 
-def python_gather_scatter(gatherIds, gatherStarts, maxIter, q_in):
-    q_out = np.zeros_like(q_in)
-    n = gatherStarts.shape[0]
-    for k in range(1,n):
-        start = gatherStarts[k-1]
-        diff = gatherStarts[k] - start
-        gq = 0
-        for i in range(maxIter):
-            if i < diff:
-                gq += q_in[gatherIds[start + i]]
-        for j in range(maxIter):
-            if j < diff:
-                q_out[gatherIds[start + j]] = gq
-    return q_out
-
-
 def gen_zero_boundary_knl():
     knl = lp.make_kernel(
         """
@@ -37,6 +21,20 @@ def gen_zero_boundary_knl():
     
     return knl
 
+def python_gather_scatter(gatherIds, gatherStarts, maxIter, q_in):
+    q_out = np.zeros_like(q_in)
+    n = gatherStarts.shape[0]
+    for k in range(1,n):
+        start = gatherStarts[k-1]
+        diff = gatherStarts[k] - start
+        gq = 0
+        for i in range(maxIter):
+            if i < diff:
+                gq += q_in[gatherIds[start + i]]
+        for j in range(maxIter):
+            if j < diff:
+                q_out[gatherIds[start + j]] = gq
+    return q_out
 
 def gen_gather_scatter_knl():
     knl = lp.make_kernel(
