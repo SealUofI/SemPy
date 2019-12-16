@@ -10,7 +10,7 @@ def elliptic_ax(mesh,p):
     Nq=mesh.Nq
 
     p_=p.reshape((nelem,Np))
-    ap=0*p_
+    ap=np.zeros_like(p_)
     for e in range(nelem):
         px,py,pz=gradient(p_[e,:],Nq)
 
