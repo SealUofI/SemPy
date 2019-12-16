@@ -93,6 +93,8 @@ def elliptic_cg_loopy(mesh,b,tol=1e-12,maxit=100,verbose=0):
 
     wnorm = lpk.gen_weighted_norm_knl()
     inner = lpk.gen_inner_product_knl()
+    xpay  = lpk.gen_inplace_xpay_knl()
+    axpy  = lpk.gen_inplace_axpy_knl()
 
     rmult=mesh.get_rmult()
 
@@ -122,8 +124,11 @@ def elliptic_cg_loopy(mesh,b,tol=1e-12,maxit=100,verbose=0):
 
         Ap=mesh.dssum(Ap)
 
-        x=x+alpha*p
-        r=r-alpha*Ap
+        event,(x,)=xpay(queue,x=x,a=alpha,y=p)
+        #x=x+alpha*p
+
+        event,(r,)=xpay(queue,x=r,a=-alpha,y=Ap)
+        #r=r-alpha*Ap
 
         rdotr0=rdotr
         event,(rdotr,)=wnorm(queue, w=rmult, x=r)
@@ -135,7 +140,9 @@ def elliptic_cg_loopy(mesh,b,tol=1e-12,maxit=100,verbose=0):
             print("niter={} r0={} r1={} alpha={} beta={} pap={}"\
                 .format(niter,rdotr0,rdotr,alpha,beta,pAp))
 
-        p=r+beta*p
+        event,(p,)=axpy(queue,x=p,a=beta,y=r)
+        #p=r+beta*p
+
         niter=niter+1
 
     return x,niter
