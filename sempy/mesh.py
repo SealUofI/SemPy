@@ -369,11 +369,23 @@ class Mesh:
         tol=1e-12
         size=nelem*Np
         global_id=1
+
+        self.global_to_local=[]
+        self.global_start=[0]
+
         for i in range(size-1):
             points[i].global_id=global_id
+            self.global_to_local.append(points[i].sequence_id)
             if get_distance(points[i],points[i+1])>tol:
                 global_id+=1
+                self.global_start.append(i+1)
+
         points[size-1].global_id=global_id
+        self.global_to_local.append(points[size-1].sequence_id)
+        self.global_start.append(size)
+
+        self.global_to_local=np.array(self.global_to_local)
+        self.global_start=np.array(self.global_start)
 
         points=sorted(points,key=cmp_to_key(compare_sequence_id))
 
@@ -428,6 +440,14 @@ class Mesh:
                     self.mask[e,n]=0
 
         self.mask=self.mask.reshape((nelem*Np,))
+
+    def get_global_to_local_map(self):
+        return self.global_to_local,self.global_start
+
+    def get_mask_ids(self):
+        ids=np.argwhere(self.mask==0)
+        m,n=ids.shape
+        return ids.reshape((m*n,))
 
     def apply_mask(self,x):
         nelem=self.get_num_elems()

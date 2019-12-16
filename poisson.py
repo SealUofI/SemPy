@@ -12,16 +12,16 @@ from sempy.elliptic import elliptic_cg
 from mayavi import mlab
 import matplotlib.pyplot as plt
 
-plot_on=0
-
-N=10
+N=3
 n=N+1
 
-mesh=load_mesh("box008.msh")
+mesh=load_mesh("box001.msh")
 mesh.find_physical_coordinates(N)
 mesh.establish_global_numbering()
 mesh.calc_geometric_factors()
 mesh.setup_mask()
+masked_ids=mesh.get_mask_ids()
+global_to_local,global_start=mesh.get_global_to_local_map()
 
 nelem=mesh.get_num_elems()
 Np=mesh.Np
@@ -41,10 +41,11 @@ b=b*B*J
 b=mesh.dssum(b)
 b=mesh.apply_mask(b)
 
-x_cg,niter=elliptic_cg(mesh,b,tol=1e-8,maxit=1000,verbose=0)
+x_cg,niter=elliptic_cg(mesh,b,tol=1e-8,maxit=10000,verbose=0)
 
 assert np.allclose(x,x_cg,1e-8)
 
+plot_on=0
 if plot_on:
     if example_2d:
       print("N/A")
