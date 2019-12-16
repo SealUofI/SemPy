@@ -7,12 +7,12 @@ from sempy.mesh import load_mesh
 from sempy.gradient import gradient,gradient_2d,\
     gradient_transpose,gradient_transpose_2d
 
-from sempy.elliptic import elliptic_cg
+from sempy.elliptic import elliptic_cg,elliptic_cg_loopy
 
 from mayavi import mlab
 import matplotlib.pyplot as plt
 
-N=3
+N=10
 n=N+1
 
 mesh=load_mesh("box001.msh")
@@ -41,9 +41,11 @@ b=b*B*J
 b=mesh.dssum(b)
 b=mesh.apply_mask(b)
 
-x_cg,niter=elliptic_cg(mesh,b,tol=1e-8,maxit=10000,verbose=0)
+x_cg,niter      =elliptic_cg(mesh,b,tol=1e-8,maxit=10000,verbose=0)
+x_cg_loopy,niter=elliptic_cg_loopy(mesh,b,tol=1e-8,maxit=10000,verbose=0)
 
 assert np.allclose(x,x_cg,1e-8)
+assert np.allclose(x,x_cg_loopy,1e-8)
 
 plot_on=0
 if plot_on:
