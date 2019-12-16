@@ -6,10 +6,7 @@ import pyopencl.clrandom
 from loopy.version import LOOPY_USE_LANGUAGE_VERSION_2018_2
 from loopy.kernel.data import AddressSpace
 
-# Add to path so can import from above directory
-#import sys
-#sys.path.append('../')
-from types import SEMPY_SCALAR
+from sempy.types import SEMPY_SCALAR
 
 # setup
 # -----
@@ -19,7 +16,7 @@ filterwarnings('error', category=lp.LoopyWarning)
 import loopy.options
 loopy.options.ALLOW_TERMINAL_COLORS = False
 
-import loopy_kernels as lpk
+import sempy.loopy.loopy_kernels as lpk
 
 
 from sempy.gradient import gradient,gradient_2d,\
@@ -91,14 +88,14 @@ def elliptic_cg_loopy(mesh,b,tol=1e-12,maxit=100,verbose=0):
     platform = cl.get_platforms()
     my_gpu_devices = platform[0].get_devices(device_type=cl.device_type.GPU)
     #ctx = cl.Context(devices=my_gpu_devices)
-    ctx = cl.create_some_context(interactive=True)
+    ctx = cl.create_some_context(interactive=False)
     queue = cl.CommandQueue(ctx)
 
     wnorm = lpk.gen_weighted_norm_knl()
 
     rmult=mesh.get_rmult()
 
-    norm_b = wnorm(queue, w=rmult, x=b)
+    event,(norm_b,)=wnorm(queue, w=rmult, x=b)
     #norm_b=np.dot(np.multiply(rmult,b),b)
 
     TOL=max(tol*tol*norm_b,tol*tol)
@@ -242,13 +239,3 @@ def cg(A,b,tol=1e-12,maxit=100,verbose=0):
  
     #print(np.linalg.norm(x - x_lp))
     return x,niter
-   
-##Test
-"""
-A = np.float32(np.random.rand(10,10))
-A += A.T
-A += np.diag(np.sum(A, axis=0))
-x = np.float32(np.random.rand(10))
-x, niter = cg(A,x)
-print(niter)
-"""
