@@ -89,8 +89,7 @@ def gen_CG_iteration():
         #],
         assumptions="n > 0",
         default_offset=None,
-        name="cg",
-        target=lp.PyOpenCLTarget()
+        name="cg"
     )
 
     knl = lp.make_reduction_inames_unique(knl)
@@ -117,12 +116,31 @@ def gen_Ax_knl():
         #],
         assumptions="n > 0 and m > 0",
         default_offset=None,
-        name="Ax",
-        target=lp.PyOpenCLTarget()
+        name="Ax"
     )
 
     return knl
 
+def gen_2dx3d_tensor_product_knl():
+    knl = lp.make_kernel(
+        """
+        {[i,j,k]: 0<=i,j,k,l<n }
+        """,
+        """
+        result[l,i,k] = sum(j,A2d[i,j]*B3d[l,j,k])
+        """,
+        #kernel_data = [
+        #    lp.GlobalArg("result", SEMPY_SCALAR, shape=(m), order="C"),
+        #    lp.GlobalArg("A", SEMPY_SCALAR, shape=(m,n), order="C"),
+        #    lp.GlobalArg("x", SEMPY_SCALAR, shape=(n,), order="C")
+        #],
+        assumptions="n > 0",
+        default_offset=None,
+        name="2dx3d_tensor_product"
+    )
+
+    return knl
+   
 
 def gen_norm_knl():
     knl = lp.make_kernel(
@@ -299,12 +317,21 @@ if __name__ == "__main__":
     ctx = cl.create_some_context(interactive=True)
     queue = cl.CommandQueue(ctx)
 
+    tp = gen_2dx3d_tensor_product_knl()
+    print(tp)
+    n = 10
+    V = np.random.rand(n,n,n)
+    D = np.random.rand(n,n)
+    tp = lp.set_options(tp, "write_code")
+    result = tp(queue, A2d=D, B3d=V)
+
+    """
     zeroBoundary = gen_zero_boundary_knl()
     dofs = np.random.rand(10)
     boundaryIndices = np.array([0,5], dtype=np.int32)
     result = zeroBoundary(queue, dofs=dofs, boundaryIndices=boundaryIndices)
     print(result)
-
+    """
     """
     wip = gen_weighted_inner_product_knl()
     print(wip)
