@@ -99,6 +99,21 @@ def gen_CG_iteration():
 
     return knl
 
+def gen_apply_geometric_factors_knl():
+    knl = lp.make_kernel(
+        """
+        {[i,j,k]: 0<=i,j<3 and 0<=k<n }
+        """,
+        """
+        apx[i,k] = sum(j, g[e,i,j,k]*px[j,k])
+        """,
+        assumptions="n > 0",
+        default_offset=None,
+        name="geo_factors_apply"
+    )
+
+    return knl
+
 
 
 def gen_Ax_knl():
@@ -292,8 +307,6 @@ def gen_inplace_axpy_knl():
 
     return knl
 
-  
-
 def gen_axpy_knl():
 
     knl = lp.make_kernel(
@@ -338,6 +351,29 @@ if __name__ == "__main__":
     ctx = cl.create_some_context(interactive=True)
     queue = cl.CommandQueue(ctx)
 
+    #"""
+    g_app = gen_apply_geometric_factors_knl()
+    print(g_app)
+    n = 10
+    G = np.random.rand(2,3,3,n)
+    P = np.random.rand(3,n)
+    #result = np.empty_like(V)
+    g_app = lp.set_options(g_app, "write_code")
+    evt, (result,) = g_app(queue,e=np.int32(1),g=G,px=P)
+    print(result)
+    print()
+    R = np.empty_like(P)
+    for i in range(3):
+        R[i,:] = np.sum(G[1,i,:,:]*P[:,:], axis=0)
+    print(R)
+    #print(result)
+    #R = np.empty_like(V)
+    #for i in range(n):
+    #    R[i,:,:] = D@V[i,:,:]
+    #print(R)
+
+    #"""
+    """
     mxm = gen_mxm_knl()
     print(mxm)
     n = 5
@@ -352,6 +388,7 @@ if __name__ == "__main__":
     #for i in range(n):
     #    R[i,:,:] = D@V[i,:,:]
     #print(R)
+    """
     """
     tp = gen_tensor_product_2dx3d_knl()
     print(tp)
