@@ -137,50 +137,43 @@ def gen_Ax_knl():
     return knl
 
 
-def gen_gradient_knl(n=10):
+def gen_gradient_knl():
     knl = lp.make_kernel(
         #["{[i,i0,ii,j,k,k0,kk,l]: 0<=i,i0,j,k,k0,l<n and 0<=ii, kk < nn}"],
         ["{[i,i0,ii,j,k,k0,kk,l]: 0<=i,i0,j,k,k0,l<n and 0<=ii, kk < nn}",
          "{[kkk, d0,d1,d2,kkk0]: 0<=kkk,kkk0<nnn and 0<=d0,d1,d2<3}",
-         "{[it,i0t,iit,kt,k0t,kkt,lt]: 0<=it,i0t,kt,k0t,lt<n and 0<=iit, kkt < nn}"],
+         "{[it,i0t,iit,kt,k0t,kkt,lt]: 0<=it,i0t,kt,k0t,lt<n and 0<=iit, kkt < nn}",
+         "{[e]: 0<=e<nElem}"],
         """
-        #W(d1) := sum(d0, g[e,d1,d0,kkk]*pr[d0,kkk])
         <> nn = n*n
         <> nnn = nn*n
+        for e
         with {id_prefix=grad}
             # Better to just pass in D.T?
-            pr[0, ii*n + k0] = sum(j,U[ii*n + j]*D[k0*n + j])
-            pr[1, l*nn + n*i + k] = sum(j,D[i*n + j]*U[l*nn + j*n + k])
-            pr[2, i0*nn + kk] = sum(j,D[i0*n + j]*U[j*nn + kk])
+            pr[0, ii*n + k0] = sum(j,U[ii*n + j]*D[k0,j])
+            pr[1, l*nn + n*i + k] = sum(j,D[i,j]*U[l*nn + j*n + k])
+            pr[2, i0*nn + kk] = sum(j,D[i0,j]*U[j*nn + kk])
         end
-        #...gbarrier
-        with {dep=grad*, id_prefix=W}    
-             W[d1,kkk] = sum(d0, g[e,d1,d0,kkk]*pr[d0,kkk])
+        W[d1,kkk] = sum(d0, g[e,d1,d0,kkk]*pr[d0,kkk]) {id=W, dep=*grad*}
+        with {id_prefix=Ur,dep=W}
+            Ur[0, iit*n + k0t] = sum(j,W[0,iit*n + j]*D[j,k0t])
+            Ur[1, lt*nn + it*n + kt] = sum(j,D[j,it]*W[1, lt*nn + j*n + kt])
+            Ur[2, i0t*nn + kkt] = sum(j,D[j,i0t]*W[2, j*nn + kkt])           
         end
-        #...gbarrier
-        with {id_prefix=gradT,dep=W*}
-            #Ur[0, iit*n + k0t] = sum(j,W(0)*D[j*n+k0t])
-            #Ur[1, lt*nn + it*n + kt] = sum(j,D[j,it]*W[1, lt*nn + j*n + kt])
-            #Ur[2, i0t*nn + kkt] = sum(j,D[j,i0t]*W[2, j*nn + kkt])           
- 
-        #    Ur[0, iit*n + k0t] = sum(j,W[0,iit*n + j]*D[j*n + k0t])
-        #    Ur[1, lt*nn + it*n + kt] = sum(j,D[j,it]*W[1, lt*nn + j*n + kt])
-        #    Ur[2, i0t*nn + kkt] = sum(j,D[j,i0t]*W[2, j*nn + kkt])           
+        result[e,kkk0] = sum(d2, Ur[d2,kkk0]) {dep=Ur*}
         end
-        #result[kkk0] = sum(d2, Ur[d2,kkk0]) {dep=gradT*}
-
-
-
         """,
         kernel_data = [
             lp.GlobalArg("U", SEMPY_SCALAR, shape=(n*n*n,), order="C"),
+            lp.GlobalArg("D", SEMPY_SCALAR, shape=(n,n), order="C"),
+            lp.GlobalArg("result", SEMPY_SCALAR, shape=(nElem, n*n*n), order="C"),
+            lp.GlobalArg("g", SEMPY_SCALAR, shape=(nElem,3,3,n*n*n), order="C"), 
+            # If fix params
             lp.GlobalArg("Ur", SEMPY_SCALAR, shape=(3,n*n*n), order="C"),
-            lp.GlobalArg("D", SEMPY_SCALAR, shape=(n*n,), order="C"),
             lp.GlobalArg("W", SEMPY_SCALAR, shape=(3,n*n*n,), order="C"),
-            lp.GlobalArg("pr", SEMPY_SCALAR, shape=(3,n*n*n), order="C"),
+            lp.GlobalArg("pr", SEMPY_SCALAR, shape=(3,n*n*n), order="C"), 
             lp.ValueArg("n", np.int32),
-            lp.ValueArg("e", np.int32),
-            lp.GlobalArg("g", SEMPY_SCALAR, shape=(2,3,3,n*n*n), order="C") 
+            lp.ValueArg("nElem", np.int32),
         ],
         assumptions="n > 0 and nn > 0",
         default_offset=None,
@@ -420,14 +413,15 @@ if __name__ == "__main__":
     ctx = cl.create_some_context(interactive=True)
     queue = cl.CommandQueue(ctx)
 
-    n = 10
+    n = np.int32(10)
+    nElem=np.int32(10)
     grad = gen_gradient_knl()
     print(grad)
     grad = lp.set_options(grad, "write_code")
     U = np.random.rand(n*n*n)
-    D = np.random.rand(n*n)
-    g = np.random.rand(2,3,3,n*n*n)
-    evt, (pr,W) = grad(queue, D=D, U=U, g=g, e=np.int32(1), n=np.int32(n))
+    D = np.random.rand(n,n)
+    g = np.random.rand(nElem,3,3,n*n*n)
+    evt, (pr,W,Ur,result) = grad(queue, D=D, U=U, g=g,n=n,nElem=nElem)
     print(pr)
     print(W)
     """
