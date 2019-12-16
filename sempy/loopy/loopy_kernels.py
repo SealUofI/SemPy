@@ -121,13 +121,13 @@ def gen_Ax_knl():
 
     return knl
 
-def gen_2dx3d_tensor_product_knl():
+def gen_mxm_knl():
     knl = lp.make_kernel(
         """
-        {[i,j,k]: 0<=i,j,k,l<n }
+        {[i,j,k]: 0<=i,j,k<n }
         """,
         """
-        result[l,i,k] = sum(j,A2d[i,j]*B3d[l,j,k])
+        result[i,k] = sum(j,A[i,j]*X[j,k])
         """,
         #kernel_data = [
         #    lp.GlobalArg("result", SEMPY_SCALAR, shape=(m), order="C"),
@@ -136,7 +136,28 @@ def gen_2dx3d_tensor_product_knl():
         #],
         assumptions="n > 0",
         default_offset=None,
-        name="2dx3d_tensor_product"
+        name="mxm"
+    )
+
+    return knl
+    
+
+def gen_tensor_product_2dx3d_knl():
+    knl = lp.make_kernel(
+        """
+        {[i,j,k,l]: 0<=i,j,k,l<n }
+        """,
+        """
+        result[l,i,k] = sum(j,A2d[i,j]*X3d[l,j,k])
+        """,
+        #kernel_data = [
+        #    lp.GlobalArg("result", SEMPY_SCALAR, shape=(m), order="C"),
+        #    lp.GlobalArg("A", SEMPY_SCALAR, shape=(m,n), order="C"),
+        #    lp.GlobalArg("x", SEMPY_SCALAR, shape=(n,), order="C")
+        #],
+        assumptions="n > 0",
+        default_offset=None,
+        name="tensor_product_2dx3d"
     )
 
     return knl
@@ -317,14 +338,35 @@ if __name__ == "__main__":
     ctx = cl.create_some_context(interactive=True)
     queue = cl.CommandQueue(ctx)
 
-    tp = gen_2dx3d_tensor_product_knl()
+    mxm = gen_mxm_knl()
+    print(mxm)
+    n = 5
+    V = np.random.rand(n,n)
+    D = np.random.rand(n,n)
+    #result = np.empty_like(V)
+    mxm = lp.set_options(mxm, "write_code")
+    evt, (result,) = mxm(queue, A=D, X=V)
+    print(result)
+    print(D@V)
+    #R = np.empty_like(V)
+    #for i in range(n):
+    #    R[i,:,:] = D@V[i,:,:]
+    #print(R)
+    """
+    tp = gen_tensor_product_2dx3d_knl()
     print(tp)
-    n = 10
+    n = 3
     V = np.random.rand(n,n,n)
     D = np.random.rand(n,n)
+    result = np.empty_like(V)
     tp = lp.set_options(tp, "write_code")
-    result = tp(queue, A2d=D, B3d=V)
-
+    evt, (result,) = tp(queue, A2d=D, X3d=V)
+    print(result)
+    R = np.empty_like(V)
+    for i in range(n):
+        R[i,:,:] = D@V[i,:,:]
+    print(R)
+    """
     """
     zeroBoundary = gen_zero_boundary_knl()
     dofs = np.random.rand(10)
