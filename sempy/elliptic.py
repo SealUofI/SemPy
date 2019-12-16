@@ -92,6 +92,7 @@ def elliptic_cg_loopy(mesh,b,tol=1e-12,maxit=100,verbose=0):
     queue = cl.CommandQueue(ctx)
 
     wnorm = lpk.gen_weighted_norm_knl()
+    inner = lpk.gen_inner_product_knl()
 
     rmult=mesh.get_rmult()
 
@@ -115,7 +116,8 @@ def elliptic_cg_loopy(mesh,b,tol=1e-12,maxit=100,verbose=0):
         Ap=elliptic_ax(mesh,p)
         mesh.apply_mask(Ap)
 
-        pAp=np.dot(Ap,p)
+        event,(pAp,)=inner(queue,x=Ap,y=p)
+        #pAp=np.dot(Ap,p)
         alpha=rdotr/pAp
 
         Ap=mesh.dssum(Ap)
@@ -124,7 +126,9 @@ def elliptic_cg_loopy(mesh,b,tol=1e-12,maxit=100,verbose=0):
         r=r-alpha*Ap
 
         rdotr0=rdotr
-        rdotr=np.dot(np.multiply(rmult,r),r)
+        event,(rdotr,)=wnorm(queue, w=rmult, x=r)
+        #rdotr=np.dot(np.multiply(rmult,r),r)
+
         beta=rdotr/rdotr0
 
         if verbose:
