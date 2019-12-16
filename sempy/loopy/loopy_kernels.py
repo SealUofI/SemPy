@@ -153,10 +153,12 @@ def gen_gradient_knl(n=10):
             pr[1, l*nn + n*i + k] = sum(j,D[i*n + j]*U[l*nn + j*n + k])
             pr[2, i0*nn + kk] = sum(j,D[i0*n + j]*U[j*nn + kk])
         end
+        #...gbarrier
         with {dep=grad*, id_prefix=W}    
              W[d1,kkk] = sum(d0, g[e,d1,d0,kkk]*pr[d0,kkk])
         end
-        with {id_prefix=gradT,dep=grad*}
+        #...gbarrier
+        with {id_prefix=gradT,dep=W*}
             #Ur[0, iit*n + k0t] = sum(j,W(0)*D[j*n+k0t])
             #Ur[1, lt*nn + it*n + kt] = sum(j,D[j,it]*W[1, lt*nn + j*n + kt])
             #Ur[2, i0t*nn + kkt] = sum(j,D[j,i0t]*W[2, j*nn + kkt])           
@@ -172,7 +174,7 @@ def gen_gradient_knl(n=10):
         """,
         kernel_data = [
             lp.GlobalArg("U", SEMPY_SCALAR, shape=(n*n*n,), order="C"),
-            #lp.GlobalArg("Ur", SEMPY_SCALAR, shape=(3,n*n*n), order="C"),
+            lp.GlobalArg("Ur", SEMPY_SCALAR, shape=(3,n*n*n), order="C"),
             lp.GlobalArg("D", SEMPY_SCALAR, shape=(n*n,), order="C"),
             lp.GlobalArg("W", SEMPY_SCALAR, shape=(3,n*n*n,), order="C"),
             lp.GlobalArg("pr", SEMPY_SCALAR, shape=(3,n*n*n), order="C"),
