@@ -12,7 +12,7 @@ def gen_zero_boundary_knl():
         {[i]: 0<=i<n}
         """,
         """
-        dofs[boundaryIndices[i]] = 0
+        dofs[boundary_indices[i]] = 0
         """,
         assumptions="n > 0",
         default_offset=None,

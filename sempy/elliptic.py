@@ -85,6 +85,10 @@ def elliptic_cg(mesh,b,tol=1e-12,maxit=100,verbose=0):
 
 
 def elliptic_cg_loopy(mesh,b,tol=1e-12,maxit=100,verbose=0):
+    ## Get mesh data
+    masked_ids=mesh.get_mask_ids()
+
+    ## Setup loopy
     platform = cl.get_platforms()
     my_gpu_devices = platform[0].get_devices(device_type=cl.device_type.GPU)
     #ctx = cl.Context(devices=my_gpu_devices)
@@ -95,6 +99,7 @@ def elliptic_cg_loopy(mesh,b,tol=1e-12,maxit=100,verbose=0):
     inner = lpk.gen_inner_product_knl()
     xpay  = lpk.gen_inplace_xpay_knl()
     axpy  = lpk.gen_inplace_axpy_knl()
+    mask  = lpk.gen_zero_boundary_knl()
 
     rmult=mesh.get_rmult()
 
@@ -116,7 +121,9 @@ def elliptic_cg_loopy(mesh,b,tol=1e-12,maxit=100,verbose=0):
     p=r
     while niter<maxit and rdotr>TOL:
         Ap=elliptic_ax(mesh,p)
-        mesh.apply_mask(Ap)
+
+        event,(Ap,)=mask(queue,boundary_indices=masked_ids,dofs=Ap)
+        #mesh.apply_mask(Ap)
 
         event,(pAp,)=inner(queue,x=Ap,y=p)
         #pAp=np.dot(Ap,p)
