@@ -87,10 +87,16 @@ def elliptic_cg(mesh,b,tol=1e-12,maxit=100,verbose=0):
 def elliptic_cg_loopy(mesh,b,tol=1e-12,maxit=100,verbose=0):
     ## Get mesh data
     masked_ids=mesh.get_mask_ids()
+    global_to_local,global_start=mesh.get_global_to_local_map()
+    max_iter=np.max(global_start[1:]-global_start[:-1])
+    #print(global_to_local)
+    #print(global_start)
+    #print(max_iter)
 
     ## Setup loopy
     platform = cl.get_platforms()
-    my_gpu_devices = platform[0].get_devices(device_type=cl.device_type.GPU)
+    my_gpu_devices = platform[0].get_devices(device_type=\
+        cl.device_type.GPU)
     #ctx = cl.Context(devices=my_gpu_devices)
     ctx = cl.create_some_context(interactive=False)
     queue = cl.CommandQueue(ctx)
@@ -100,6 +106,7 @@ def elliptic_cg_loopy(mesh,b,tol=1e-12,maxit=100,verbose=0):
     xpay  = lpk.gen_inplace_xpay_knl()
     axpy  = lpk.gen_inplace_axpy_knl()
     mask  = lpk.gen_zero_boundary_knl()
+    dssum = lpk.gen_gather_scatter_knl()
 
     rmult=mesh.get_rmult()
 
@@ -129,7 +136,10 @@ def elliptic_cg_loopy(mesh,b,tol=1e-12,maxit=100,verbose=0):
         #pAp=np.dot(Ap,p)
         alpha=rdotr/pAp
 
-        Ap=mesh.dssum(Ap)
+        event,(Ap,)=dssum(queue,max_iter=max_iter,\
+            gather_ids=global_to_local,gather_start=global_start,
+            q=Ap)
+        #Ap=mesh.dssum(Ap)
 
         event,(x,)=xpay(queue,x=x,a=alpha,y=p)
         #x=x+alpha*p

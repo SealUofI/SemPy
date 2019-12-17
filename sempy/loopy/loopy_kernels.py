@@ -39,32 +39,31 @@ def python_gather_scatter(gatherIds, gatherStarts, maxIter, q_in):
 def gen_gather_scatter_knl():
     knl = lp.make_kernel(
         """
-        {[k,i,j]: 0<=i,j<maxIter and 1<=k<n}
+        {[k,i,j]: 0<=i,j<max_iter and 1<=k<n}
         """,
         """
         # þis could go off of þe end of þe array.
-        #gq := sum(i, (i < diff)*q_in[gatherIds[start + i]])
+        #gq := sum(i, (i < diff)*q_in[gather_ids[start + i]])
         for k
-            <> start = gatherStarts[k-1]
-            <> diff = gatherStarts[k] - start
+            <> start = gather_start[k-1]
+            <> diff = gather_start[k] - start
+            <> gq = 0
             for i
                 if i < diff
-                    gq = gq + q_in[gatherIds[start + i]] {id=gq}
+                    gq = gq + q[gather_ids[start + i]] {id=gq,dep=*}
                 end
             end
             for j
                 if j < diff
-                    q_out[gatherIds[start + j]] = gq
+                    q[gather_ids[start + j]] = gq {dep=gq}
                 end
             end
         end
         """,
-        assumptions="maxIter > 0 and n > 1",
+        assumptions="max_iter > 0 and n > 1",
         default_offset=None,
         name="gather_scatter"
     )
-    knl = lp.precompute(knl, ["gq"])
-    
     return knl
 
 def gen_CG_iteration():

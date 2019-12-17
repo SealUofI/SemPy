@@ -42,9 +42,10 @@ b=mesh.dssum(b)
 b=mesh.apply_mask(b)
 
 x_cg,niter      =elliptic_cg(mesh,b,tol=1e-8,maxit=10000,verbose=0)
-x_cg_loopy,niter=elliptic_cg_loopy(mesh,b,tol=1e-8,maxit=10000,verbose=0)
+x_cg_loopy,niter=elliptic_cg_loopy(mesh,b,tol=1e-8,maxit=10000,
+  verbose=0)
 
-#assert np.allclose(x,x_cg,1e-8)
+assert np.allclose(x_cg,x_cg_loopy,1e-8)
 assert np.allclose(x,x_cg_loopy,1e-8)
 
 plot_on=0
