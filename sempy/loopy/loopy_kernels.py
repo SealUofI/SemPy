@@ -136,26 +136,25 @@ def gen_Ax_knl():
     return knl
 
 
-def gen_gradient_knl():
+def gen_elliptic_Ax_knl(nElem,n):
     knl = lp.make_kernel(
-        #["{[i,i0,ii,j,k,k0,kk,l]: 0<=i,i0,j,k,k0,l<n and 0<=ii, kk < nn}"],
         ["{[i,i0,ii,j,k,k0,kk,l]: 0<=i,i0,j,k,k0,l<n and 0<=ii, kk < nn}",
          "{[kkk, d0,d1,d2,kkk0]: 0<=kkk,kkk0<nnn and 0<=d0,d1,d2<3}",
          "{[it,i0t,iit,kt,k0t,kkt,lt]: 0<=it,i0t,kt,k0t,lt<n and 0<=iit, kkt < nn}",
          "{[e]: 0<=e<nElem}"],
         """
-        <> nn = n*n
-        <> nnn = nn*n
+        #<> nn = n*n
+        #<> nnn = nn*n
         for e
         with {id_prefix=grad}
             # Better to just pass in D.T?
-            pr[0, ii*n + k0] = sum(j,U[ii*n + j]*D[k0,j])
+            <> pr[0, ii*n + k0] = sum(j,U[ii*n + j]*D[k0,j])
             pr[1, l*nn + n*i + k] = sum(j,D[i,j]*U[l*nn + j*n + k])
             pr[2, i0*nn + kk] = sum(j,D[i0,j]*U[j*nn + kk])
         end
-        W[d1,kkk] = sum(d0, g[e,d1,d0,kkk]*pr[d0,kkk]) {id=W, dep=*grad*}
+        <> W[d1,kkk] = sum(d0, g[e,d1,d0,kkk]*pr[d0,kkk]) {id=W, dep=*grad*}
         with {id_prefix=Ur,dep=W}
-            Ur[0, iit*n + k0t] = sum(j,W[0,iit*n + j]*D[j,k0t])
+            <> Ur[0, iit*n + k0t] = sum(j,W[0,iit*n + j]*D[j,k0t])
             Ur[1, lt*nn + it*n + kt] = sum(j,D[j,it]*W[1, lt*nn + j*n + kt])
             Ur[2, i0t*nn + kkt] = sum(j,D[j,i0t]*W[2, j*nn + kkt])           
         end
@@ -167,18 +166,19 @@ def gen_gradient_knl():
             lp.GlobalArg("D", SEMPY_SCALAR, shape=(n,n), order="C"),
             lp.GlobalArg("result", SEMPY_SCALAR, shape=(nElem, n*n*n), order="C"),
             lp.GlobalArg("g", SEMPY_SCALAR, shape=(nElem,3,3,n*n*n), order="C"), 
-            # If fix params
-            lp.GlobalArg("Ur", SEMPY_SCALAR, shape=(3,n*n*n), order="C"),
-            lp.GlobalArg("W", SEMPY_SCALAR, shape=(3,n*n*n,), order="C"),
-            lp.GlobalArg("pr", SEMPY_SCALAR, shape=(3,n*n*n), order="C"), 
-            lp.ValueArg("n", np.int32),
-            lp.ValueArg("nElem", np.int32),
+            # If fix params can remove these
+            #lp.GlobalArg("Ur", SEMPY_SCALAR, shape=(3,n*n*n), order="C"),
+            #lp.GlobalArg("W", SEMPY_SCALAR, shape=(3,n*n*n,), order="C"),
+            #lp.GlobalArg("pr", SEMPY_SCALAR, shape=(3,n*n*n), order="C"), 
+            #lp.ValueArg("n", np.int32),
+            #lp.ValueArg("nElem", np.int32),
         ],
         assumptions="n > 0 and nn > 0",
         default_offset=None,
-        name="grad"
+        name="elliptic_Ax"
     )
     knl = lp.make_reduction_inames_unique(knl)
+    knl = lp.fix_parameters(knl, n=n, nElem=nElem, nn=n*n, nnn=n*n*n)
 
     return knl
 
@@ -402,9 +402,9 @@ if __name__ == "__main__":
     loopy.options.ALLOW_TERMINAL_COLORS = False
 
     # Add to path so can import from above directory
-    import sys
-    sys.path.append('../')
-    from sempy_types import SEMPY_SCALAR
+    #import sys
+    #sys.path.append('../')
+    SEMPY_SCALAR = np.float64
 
     platform = cl.get_platforms()
     my_gpu_devices = platform[0].get_devices(device_type=cl.device_type.GPU)
@@ -414,15 +414,17 @@ if __name__ == "__main__":
 
     n = np.int32(10)
     nElem=np.int32(10)
-    grad = gen_gradient_knl()
-    print(grad)
-    grad = lp.set_options(grad, "write_code")
+    Ax = gen_elliptic_Ax_knl(nElem,n)
+    print(Ax)
+    Ax= lp.set_options(Ax, "write_code")
     U = np.random.rand(n*n*n)
     D = np.random.rand(n,n)
     g = np.random.rand(nElem,3,3,n*n*n)
-    evt, (pr,W,Ur,result) = grad(queue, D=D, U=U, g=g,n=n,nElem=nElem)
-    print(pr)
-    print(W)
+    evt, (result) = Ax(queue, D=D, U=U, g=g)
+    #print(pr)
+    #print(W)
+    #print(Ur)
+    print(result)
     """
     g_app = gen_apply_geometric_factors_knl()
     print(g_app)
