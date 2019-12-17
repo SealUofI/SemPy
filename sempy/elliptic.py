@@ -88,11 +88,6 @@ def elliptic_cg(mesh,b,tol=1e-12,maxit=100,verbose=0):
 
 
 def elliptic_cg_loopy(mesh,b,tol=1e-12,maxit=100,verbose=0):
-    ## Get mesh data
-    masked_ids=mesh.get_mask_ids()
-    global_to_local,global_start=mesh.get_global_to_local_map()
-    max_iter=np.max(global_start[1:]-global_start[:-1])
-
     ## Setup loopy
     platform = cl.get_platforms()
     my_gpu_devices = platform[0].get_devices(device_type=\
@@ -107,45 +102,57 @@ def elliptic_cg_loopy(mesh,b,tol=1e-12,maxit=100,verbose=0):
     knl_mask  = lpk.gen_zero_boundary_knl()
     knl_dssum = lpk.gen_gather_scatter_knl()
 
-    nelem   = mesh.get_num_elems()
-    ndofs_1d= mesh.Nq
-    D=reference_derivative_matrix(ndofs_1d-1)
-    G=mesh.get_geom()
+    nelem    = mesh.get_num_elems()
+    ndofs_1d = mesh.Nq
+    knl_ax_lp= lpk.gen_elliptic_Ax_knl(nelem,ndofs_1d)
 
-    knl_ax_lp   = lpk.gen_elliptic_Ax_knl(nelem,ndofs_1d)
+    ## Get mesh data
+    d_masked_ids=cl.array.to_device(queue,mesh.get_mask_ids())
+    global_to_local,global_start=mesh.get_global_to_local_map()
+    max_iter=np.max(global_start[1:]-global_start[:-1])
 
-    rmult=mesh.get_rmult()
+    d_global_to_local=cl.array.to_device(queue,global_to_local)
+    d_global_start=cl.array.to_device(queue,global_start)
 
-    event,(norm_b,)=knl_wnorm(queue, w=rmult, x=b)
-    TOL=max(tol*tol*norm_b,tol*tol)
+    d_D=cl.array.to_device(queue,reference_derivative_matrix(ndofs_1d-1))
+    d_G=cl.array.to_device(queue,mesh.get_geom())
 
-    r=b
-    event,(rdotr,)=knl_wnorm(queue,w=rmult,x=r)
+    d_b=cl.array.to_device(queue,b)
+    d_rmult=cl.array.to_device(queue,mesh.get_rmult())
+
+    event,(d_norm_b,)=knl_wnorm(queue, w=d_rmult, x=d_b)
+    TOL=max(tol*tol*d_norm_b.get(),tol*tol)
+
+    d_r=cl.array.to_device(queue,b)
+    event,(d_rdotr,)=knl_wnorm(queue,w=d_rmult,x=d_r)
+    rdotr=d_rdotr.get()
     if verbose:
         print('Initial rnorm={}'.format(rdotr))
 
-    x=0*b
+    d_x=cl.array.to_device(queue,np.zeros_like(b))
     niter=0
     if rdotr<1.e-20:
-        return x,niter
+        return d_x.get(),niter
 
-    p=r
+    d_p=cl.array.to_device(queue,b)
     while niter<maxit and rdotr>TOL:
-        event,(Ap ,)=knl_ax_lp(queue,D=D,U=p,g=G)
-        event,(Ap ,)=knl_mask(queue,boundary_indices=masked_ids,dofs=Ap)
-        event,(pAp,)=knl_inner(queue,x=Ap,y=p)
+        event,(d_Ap ,)=knl_ax_lp(queue,D=d_D,U=d_p,g=d_G)
+        event,(d_Ap ,)=knl_mask(queue,boundary_indices=d_masked_ids,dofs=d_Ap)
+        event,(d_pAp,)=knl_inner(queue,x=d_Ap,y=d_p)
 
+        pAp=d_pAp.get()
         alpha=rdotr/pAp
 
         event,(Ap,)=knl_dssum(queue,max_iter=max_iter,\
-            gather_ids=global_to_local,gather_start=global_start,
-            q=Ap)
+            gather_ids=d_global_to_local,gather_start=d_global_start,
+            q=d_Ap)
 
-        event,(x,)=knl_xpay(queue,x=x,a=alpha ,y=p)
-        event,(r,)=knl_xpay(queue,x=r,a=-alpha,y=Ap)
+        event,(d_x,)=knl_xpay(queue,x=d_x,a= alpha,y=d_p )
+        event,(d_r,)=knl_xpay(queue,x=d_r,a=-alpha,y=d_Ap)
 
         rdotr0=rdotr
-        event,(rdotr,)=knl_wnorm(queue,w=rmult,x=r)
+        event,(d_rdotr,)=knl_wnorm(queue,w=d_rmult,x=d_r)
+        rdotr=d_rdotr.get()
 
         beta=rdotr/rdotr0
 
@@ -153,8 +160,8 @@ def elliptic_cg_loopy(mesh,b,tol=1e-12,maxit=100,verbose=0):
             print("niter={} r0={} r1={} alpha={} beta={} pap={}"\
                 .format(niter,rdotr0,rdotr,alpha,beta,pAp))
 
-        event,(p,)=knl_axpy(queue,x=p,a=beta,y=r)
+        event,(d_p,)=knl_axpy(queue,x=d_p,a=beta,y=d_r)
 
         niter=niter+1
 
-    return x,niter
+    return d_x.get(),niter
