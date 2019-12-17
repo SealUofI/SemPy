@@ -11,7 +11,7 @@ setup(name='sempy',
         'gslib.py==0.1',
         'meshio==3.3.0',
         'matplotlib==3.1.1',
-        'mayavi==4.6.0',
+        #'mayavi==4.6.0',
         'pytest==5.2.2'
     ]
 )

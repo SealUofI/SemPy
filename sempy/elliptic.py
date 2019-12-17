@@ -92,7 +92,7 @@ def elliptic_cg_loopy(mesh,b,tol=1e-12,maxit=100,verbose=0):
     platform = cl.get_platforms()
     my_gpu_devices = platform[0].get_devices(device_type=\
         cl.device_type.GPU)
-    ctx = cl.create_some_context(interactive=False)
+    ctx = cl.create_some_context(interactive=True)
     queue = cl.CommandQueue(ctx)
 
     knl_wnorm = lpk.gen_weighted_norm_knl()

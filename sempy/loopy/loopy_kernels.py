@@ -155,12 +155,9 @@ def gen_elliptic_Ax_knl(nElem,n):
             pr[2, i0*nn + kk] = sum(j,D[i0,j]*U[e*nnn+j*nn + kk])
         end
         <> W[d1,kkk] = sum(d0, g[e,d1,d0,kkk]*pr[d0,kkk]) {id=W, dep=*grad*}
-        with {id_prefix=Ur,dep=W}
-            <> Ur[0, iit*n + k0t] = sum(j,W[0,iit*n + j]*D[j,k0t])
-            Ur[1, lt*nn + it*n + kt] = sum(j,D[j,it]*W[1, lt*nn + j*n + kt])
-            Ur[2, i0t*nn + kkt] = sum(j,D[j,i0t]*W[2, j*nn + kkt])           
-        end
-        result[e*nnn+kkk0] = sum(d2, Ur[d2,kkk0]) {dep=Ur*}
+        result[e*nnn + iit*n + k0t] = sum(j,W[0,iit*n + j]*D[j,k0t]) {id=res0, dep=W}
+        result[e*nnn + lt*nn + it*n + kt] = result[e*nnn + lt*nn + it*n + kt] + sum(j,D[j,it]*W[1, lt*nn + j*n + kt]) {id=res1,dep=res0}
+        result[e*nnn + i0t*nn + kkt] = result[e*nnn + i0t*nn + kkt] + sum(j,D[j,i0t]*W[2, j*nn + kkt]) {id=res2,dep=res1}           
         end
         """,
         kernel_data = [
@@ -181,7 +178,8 @@ def gen_elliptic_Ax_knl(nElem,n):
     )
     knl = lp.make_reduction_inames_unique(knl)
     knl = lp.fix_parameters(knl, n=n, nElem=nElem, nn=n*n, nnn=n*n*n)
-    knl = lp.set_temporary_scope(knl, "pr,W,Ur", "global")
+    knl = lp.set_temporary_scope(knl, "pr,W", "global")
+    knl = lp.add_nosync(knl, "any", "res1", "res2", bidirectional=True)
 
     return knl
 

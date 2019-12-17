@@ -9,7 +9,7 @@ from sempy.gradient import gradient,gradient_2d,\
 
 from sempy.elliptic import elliptic_cg,elliptic_cg_loopy
 
-from mayavi import mlab
+#from mayavi import mlab
 import matplotlib.pyplot as plt
 
 N=10
@@ -45,7 +45,6 @@ x_cg,niter      =elliptic_cg(mesh,b,tol=1e-8,maxit=10000,verbose=0)
 x_cg_loopy,niter_loopy=elliptic_cg_loopy(mesh,b,tol=1e-8,maxit=10000,
   verbose=0)
 
-error=np.abs(np.max(x-x_cg))
 print("CG iters (host/device): {}/{} error: {}"
     .format(niter,niter_loopy,error))
 print("is nan? (host/device): {}/{}".format(np.isnan(x_cg).any(),
@@ -54,6 +53,7 @@ assert np.allclose(x,x_cg,1e-8)
 assert np.allclose(x,x_cg_loopy,1e-8)
 assert np.allclose(x_cg,x_cg_loopy,1e-8)
 
+"""
 plot_on=0
 if plot_on:
     if example_2d:
@@ -64,3 +64,4 @@ if plot_on:
             scale_mode="scalar",scale_factor=0.05)
         mlab.axes()
         mlab.show()
+"""
