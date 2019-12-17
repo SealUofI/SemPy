@@ -120,7 +120,6 @@ def elliptic_cg_loopy(mesh,b,tol=1e-12,maxit=100,verbose=0):
     rmult=mesh.get_rmult()
 
     event,(norm_b,)=wnorm(queue, w=rmult, x=b)
-    #norm_b=np.dot(np.multiply(rmult,b),b)
 
     TOL=max(tol*tol*norm_b,tol*tol)
 
@@ -140,29 +139,22 @@ def elliptic_cg_loopy(mesh,b,tol=1e-12,maxit=100,verbose=0):
         event,(Ap,)=ax_lp(queue,D=D,U=p,g=G)
         Ap=Ap.reshape((nelem*mesh.Np,))
         p=p.reshape((nelem*mesh.Np,))
-        #Ap=elliptic_ax(mesh,p)
 
         event,(Ap,)=mask(queue,boundary_indices=masked_ids,dofs=Ap)
-        #mesh.apply_mask(Ap)
 
         event,(pAp,)=inner(queue,x=Ap,y=p)
-        #pAp=np.dot(Ap,p)
         alpha=rdotr/pAp
 
         event,(Ap,)=dssum(queue,max_iter=max_iter,\
             gather_ids=global_to_local,gather_start=global_start,
             q=Ap)
-        #Ap=mesh.dssum(Ap)
 
         event,(x,)=xpay(queue,x=x,a=alpha,y=p)
-        #x=x+alpha*p
 
         event,(r,)=xpay(queue,x=r,a=-alpha,y=Ap)
-        #r=r-alpha*Ap
 
         rdotr0=rdotr
         event,(rdotr,)=wnorm(queue, w=rmult, x=r)
-        #rdotr=np.dot(np.multiply(rmult,r),r)
 
         beta=rdotr/rdotr0
 
@@ -171,7 +163,6 @@ def elliptic_cg_loopy(mesh,b,tol=1e-12,maxit=100,verbose=0):
                 .format(niter,rdotr0,rdotr,alpha,beta,pAp))
 
         event,(p,)=axpy(queue,x=p,a=beta,y=r)
-        #p=r+beta*p
 
         niter=niter+1
 
