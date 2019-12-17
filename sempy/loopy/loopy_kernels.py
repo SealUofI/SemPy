@@ -150,9 +150,9 @@ def gen_elliptic_Ax_knl(nElem,n):
         for e
         with {id_prefix=grad}
             # Better to just pass in D.T?
-            <> pr[0, ii*n + k0] = sum(j,U[e,ii*n + j]*D[k0,j])
-            pr[1, l*nn + n*i + k] = sum(j,D[i,j]*U[e,l*nn + j*n + k])
-            pr[2, i0*nn + kk] = sum(j,D[i0,j]*U[e,j*nn + kk])
+            <> pr[0, ii*n + k0] = sum(j,U[e*nnn+ii*n + j]*D[k0,j])
+            pr[1, l*nn + n*i + k] = sum(j,D[i,j]*U[e*nnn+l*nn + j*n + k])
+            pr[2, i0*nn + kk] = sum(j,D[i0,j]*U[e*nnn+j*nn + kk])
         end
         <> W[d1,kkk] = sum(d0, g[e,d1,d0,kkk]*pr[d0,kkk]) {id=W, dep=*grad*}
         with {id_prefix=Ur,dep=W}
@@ -160,13 +160,13 @@ def gen_elliptic_Ax_knl(nElem,n):
             Ur[1, lt*nn + it*n + kt] = sum(j,D[j,it]*W[1, lt*nn + j*n + kt])
             Ur[2, i0t*nn + kkt] = sum(j,D[j,i0t]*W[2, j*nn + kkt])           
         end
-        result[e,kkk0] = sum(d2, Ur[d2,kkk0]) {dep=Ur*}
+        result[e*nnn+kkk0] = sum(d2, Ur[d2,kkk0]) {dep=Ur*}
         end
         """,
         kernel_data = [
-            lp.GlobalArg("U", SEMPY_SCALAR, shape=(nElem,n*n*n,), order="C"),
+            lp.GlobalArg("U", SEMPY_SCALAR, shape=(nElem*n*n*n,), order="C"),
             lp.GlobalArg("D", SEMPY_SCALAR, shape=(n,n), order="C"),
-            lp.GlobalArg("result", SEMPY_SCALAR, shape=(nElem, n*n*n), order="C"),
+            lp.GlobalArg("result", SEMPY_SCALAR, shape=(nElem*n*n*n,), order="C"),
             lp.GlobalArg("g", SEMPY_SCALAR, shape=(nElem,3,3,n*n*n), order="C"), 
             # If fix params can remove these
             #lp.GlobalArg("Ur", SEMPY_SCALAR, shape=(3,n*n*n), order="C"),

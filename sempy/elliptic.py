@@ -135,10 +135,7 @@ def elliptic_cg_loopy(mesh,b,tol=1e-12,maxit=100,verbose=0):
 
     p=r
     while niter<maxit and rdotr>TOL:
-        p=p.reshape(nelem,mesh.Np)
         event,(Ap,)=ax_lp(queue,D=D,U=p,g=G)
-        Ap=Ap.reshape((nelem*mesh.Np,))
-        p=p.reshape((nelem*mesh.Np,))
 
         event,(Ap,)=mask(queue,boundary_indices=masked_ids,dofs=Ap)
 
