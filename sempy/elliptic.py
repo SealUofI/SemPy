@@ -1,10 +1,12 @@
 import numpy as np
+
 import loopy as lp
+from loopy.version import LOOPY_USE_LANGUAGE_VERSION_2018_2
+from loopy.kernel.data import AddressSpace
+
 import pyopencl as cl
 import pyopencl.array
 import pyopencl.clrandom
-from loopy.version import LOOPY_USE_LANGUAGE_VERSION_2018_2
-from loopy.kernel.data import AddressSpace
 
 from sempy.types import SEMPY_SCALAR
 
@@ -18,6 +20,7 @@ loopy.options.ALLOW_TERMINAL_COLORS = False
 
 import sempy.loopy.loopy_kernels as lpk
 
+from sempy.derivative import reference_derivative_matrix
 
 from sempy.gradient import gradient,gradient_2d,\
     gradient_transpose,gradient_transpose_2d
@@ -108,6 +111,12 @@ def elliptic_cg_loopy(mesh,b,tol=1e-12,maxit=100,verbose=0):
     mask  = lpk.gen_zero_boundary_knl()
     dssum = lpk.gen_gather_scatter_knl()
 
+    nelem   = mesh.get_num_elems()
+    ndofs_1d= mesh.Nq
+    ax_lp   = lpk.gen_elliptic_Ax_knl(nelem,ndofs_1d)
+    D=reference_derivative_matrix(ndofs_1d-1)
+    G=mesh.get_geom()
+
     rmult=mesh.get_rmult()
 
     event,(norm_b,)=wnorm(queue, w=rmult, x=b)
@@ -127,7 +136,11 @@ def elliptic_cg_loopy(mesh,b,tol=1e-12,maxit=100,verbose=0):
 
     p=r
     while niter<maxit and rdotr>TOL:
-        Ap=elliptic_ax(mesh,p)
+        p=p.reshape(nelem,mesh.Np)
+        event,(Ap,)=ax_lp(queue,D=D,U=p,g=G)
+        Ap=Ap.reshape((nelem*mesh.Np,))
+        p=p.reshape((nelem*mesh.Np,))
+        #Ap=elliptic_ax(mesh,p)
 
         event,(Ap,)=mask(queue,boundary_indices=masked_ids,dofs=Ap)
         #mesh.apply_mask(Ap)
