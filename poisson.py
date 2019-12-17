@@ -48,6 +48,8 @@ x_cg_loopy,niter_loopy=elliptic_cg_loopy(mesh,b,tol=1e-8,maxit=10000,
 error=np.abs(np.max(x-x_cg))
 print("CG iters (host/device): {}/{} error: {}"
     .format(niter,niter_loopy,error))
+print("is nan? (host/device): {}/{}".format(np.isnan(x_cg).any(),
+    np.isnan(x_cg_loopy).any()))
 assert np.allclose(x,x_cg,1e-8)
 assert np.allclose(x,x_cg_loopy,1e-8)
 assert np.allclose(x_cg,x_cg_loopy,1e-8)
