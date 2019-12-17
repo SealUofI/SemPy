@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 N=10
 n=N+1
 
-mesh=load_mesh("box004.msh")
+mesh=load_mesh("box008.msh")
 mesh.find_physical_coordinates(N)
 mesh.establish_global_numbering()
 mesh.calc_geometric_factors()
@@ -42,11 +42,15 @@ b=mesh.dssum(b)
 b=mesh.apply_mask(b)
 
 x_cg,niter      =elliptic_cg(mesh,b,tol=1e-8,maxit=10000,verbose=0)
-x_cg_loopy,niter=elliptic_cg_loopy(mesh,b,tol=1e-8,maxit=10000,
+x_cg_loopy,niter_loopy=elliptic_cg_loopy(mesh,b,tol=1e-8,maxit=10000,
   verbose=0)
 
-assert np.allclose(x_cg,x_cg_loopy,1e-8)
+error=np.abs(np.max(x-x_cg))
+print("CG iters (host/device): {}/{} error: {}"
+    .format(niter,niter_loopy,error))
+assert np.allclose(x,x_cg,1e-8)
 assert np.allclose(x,x_cg_loopy,1e-8)
+assert np.allclose(x_cg,x_cg_loopy,1e-8)
 
 plot_on=0
 if plot_on:
