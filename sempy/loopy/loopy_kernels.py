@@ -181,6 +181,7 @@ def gen_elliptic_Ax_knl(nElem,n):
     )
     knl = lp.make_reduction_inames_unique(knl)
     knl = lp.fix_parameters(knl, n=n, nElem=nElem, nn=n*n, nnn=n*n*n)
+    knl = lp.set_temporary_scope(knl, "pr,W,Ur", "global")
 
     return knl
 
