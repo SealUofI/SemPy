@@ -150,12 +150,15 @@ def gen_elliptic_Ax_knl(nElem,n):
         for e
         with {id_prefix=grad}
             # Better to just pass in D.T?
-            <> pr[0, ii*n + k0] = sum(j,U[e*nnn+ii*n + j]*D[k0,j])
+            pr[0, ii*n + k0] = sum(j,U[e*nnn+ii*n + j]*D[k0,j])
             pr[1, l*nn + n*i + k] = sum(j,D[i,j]*U[e*nnn+l*nn + j*n + k])
             pr[2, i0*nn + kk] = sum(j,D[i0,j]*U[e*nnn+j*nn + kk])
         end
-        <> W[d1,kkk] = sum(d0, g[e,d1,d0,kkk]*pr[d0,kkk]) {id=W, dep=*grad*}
-        result[e*nnn + iit*n + k0t] = sum(j,W[0,iit*n + j]*D[j,k0t]) {id=res0, dep=W}
+        ... gbarrier {id=bar0, dep=grad*}
+        <> W[d1,kkk] = sum(d0, g[e,d1,d0,kkk]*pr[d0,kkk]) {id=W1, dep=*bar0}
+        result[e*nnn + kkk] = 0 {id=W2,dep=*W1}
+        ... gbarrier {id=bar1,dep=W*}
+        result[e*nnn + iit*n + k0t] = result[e*nnn + iit*n + k0t] + sum(j,W[0,iit*n + j]*D[j,k0t]) {id=res0, dep=bar1}
         result[e*nnn + lt*nn + it*n + kt] = result[e*nnn + lt*nn + it*n + kt] + sum(j,D[j,it]*W[1, lt*nn + j*n + kt]) {id=res1,dep=res0}
         result[e*nnn + i0t*nn + kkt] = result[e*nnn + i0t*nn + kkt] + sum(j,D[j,i0t]*W[2, j*nn + kkt]) {id=res2,dep=res1}           
         end
@@ -168,7 +171,7 @@ def gen_elliptic_Ax_knl(nElem,n):
             # If fix params can remove these
             #lp.GlobalArg("Ur", SEMPY_SCALAR, shape=(3,n*n*n), order="C"),
             #lp.GlobalArg("W", SEMPY_SCALAR, shape=(3,n*n*n,), order="C"),
-            #lp.GlobalArg("pr", SEMPY_SCALAR, shape=(3,n*n*n), order="C"), 
+            lp.GlobalArg("pr", SEMPY_SCALAR, shape=(3,n*n*n), order="C"), 
             #lp.ValueArg("n", np.int32),
             #lp.ValueArg("nElem", np.int32),
         ],
@@ -178,8 +181,20 @@ def gen_elliptic_Ax_knl(nElem,n):
     )
     knl = lp.make_reduction_inames_unique(knl)
     knl = lp.fix_parameters(knl, n=n, nElem=nElem, nn=n*n, nnn=n*n*n)
-    knl = lp.set_temporary_scope(knl, "pr,W", "global")
+    knl = lp.set_temporary_scope(knl, "W", "global")
     knl = lp.add_nosync(knl, "any", "res1", "res2", bidirectional=True)
+    knl = lp.add_nosync(knl, "any", "res0", "res1", bidirectional=True)
+    knl = lp.add_nosync(knl, "any", "res0", "res2", bidirectional=True)
+
+    ## First part optimizations
+
+    ## Middle optimizations
+    knl = lp.split_iname(knl, "kkk", 32, outer_tag="g.0", inner_tag="l.0")
+    knl = lp.add_prefetch(knl, "pr", sweep_inames=["kkk_inner", "d0"], default_tag=lp.auto)
+    #knl = lp.tag_inames(knl, [("d0", "unr")])
+
+    #knl = lp.tag_inames(knl, [("d1", "unr")])
+    ## Second part optimisations
 
     return knl
 
@@ -421,7 +436,8 @@ if __name__ == "__main__":
     U = np.random.rand(nElem*n*n*n)
     D = np.random.rand(n,n)
     g = np.random.rand(nElem,3,3,n*n*n)
-    evt, (result) = Ax(queue, D=D, U=U, g=g)
+    pr = np.empty((3,n*n*n,),dtype=SEMPY_SCALAR)
+    evt, (result) = Ax(queue, D=D, U=U, g=g,pr=pr)
     #print(pr)
     #print(W)
     #print(Ur)
