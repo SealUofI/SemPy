@@ -141,7 +141,7 @@ def gen_Ax_knl():
 def gen_elliptic_Ax_knl(nElem,n):
     knl = lp.make_kernel(
         ["{[i,i0,ii,j,k,k0,kk,l]: 0<=i,i0,j,k,k0,l<n and 0<=ii, kk < nn}",
-         "{[kkk, d0,d1,d2,kkk0]: 0<=kkk,kkk0<nnn and 0<=d0,d1,d2<3}",
+         "{[kkk, d0,d1]: 0<=kkk<nnn and 0<=d0,d1<3}",
          "{[it,i0t,iit,kt,k0t,kkt,lt]: 0<=it,i0t,kt,k0t,lt<n and 0<=iit, kkt < nn}",
          "{[e]: 0<=e<nElem}"],
         """
