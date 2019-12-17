@@ -6,7 +6,7 @@ import pyopencl.clrandom
 from loopy.version import LOOPY_USE_LANGUAGE_VERSION_2018_2
 from loopy.kernel.data import AddressSpace
 
-from sempy.types import SEMPY_SCALAR
+#from sempy.types import SEMPY_SCALAR
 
 def gen_zero_boundary_knl():
     knl = lp.make_kernel(
@@ -418,7 +418,7 @@ if __name__ == "__main__":
     Ax = gen_elliptic_Ax_knl(nElem,n)
     print(Ax)
     Ax= lp.set_options(Ax, "write_code")
-    U = np.random.rand(n*n*n)
+    U = np.random.rand(nElem*n*n*n)
     D = np.random.rand(n,n)
     g = np.random.rand(nElem,3,3,n*n*n)
     evt, (result) = Ax(queue, D=D, U=U, g=g)
