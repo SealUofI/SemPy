@@ -186,12 +186,22 @@ def gen_elliptic_Ax_knl(nElem,n):
     knl = lp.add_nosync(knl, "any", "res0", "res1", bidirectional=True)
     knl = lp.add_nosync(knl, "any", "res0", "res2", bidirectional=True)
 
+    ## Divide element processing 
+    #knl = lp.split_iname(knl, "e", int(nElem), outer_tag="g.0")
+
     ## First part optimizations
 
     ## Middle optimizations
-    knl = lp.split_iname(knl, "kkk", 32, outer_tag="g.0", inner_tag="l.0")
-    knl = lp.add_prefetch(knl, "pr", sweep_inames=["kkk_inner", "d0"], default_tag=lp.auto)
-    #knl = lp.tag_inames(knl, [("d0", "unr")])
+    knl = lp.split_iname(knl, "kkk", 1024, outer_tag="g.0", inner_tag="l.0")
+
+    # Broken
+    #knl = lp.add_prefetch(knl, "g", sweep_inames=["kkk_inner", "d0", "d1" ], default_tag="l.auto") 
+
+    # Breaks without Kaushik's fix
+    knl = lp.add_prefetch(knl, "pr", sweep_inames=["kkk_inner", "d0"], default_tag="l.auto")
+    knl = lp.add_dependency(knl, "id:pr_fetch_rule", "id:bar0")
+
+    knl = lp.tag_inames(knl, [("d0", "unr"),("d1","unr")])
 
     #knl = lp.tag_inames(knl, [("d1", "unr")])
     ## Second part optimisations
