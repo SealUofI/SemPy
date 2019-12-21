@@ -1,31 +1,30 @@
 import numpy as np
 
-import loopy as lp
-from loopy.version import LOOPY_USE_LANGUAGE_VERSION_2018_2
-from loopy.kernel.data import AddressSpace
-
-import pyopencl as cl
-import pyopencl.array
-import pyopencl.clrandom
-
-from sempy.types import SEMPY_SCALAR
-
-# setup
-# -----
-lp.set_caching_enabled(False)
-from warnings import filterwarnings, catch_warnings
-filterwarnings('error', category=lp.LoopyWarning)
-import loopy.options
-loopy.options.ALLOW_TERMINAL_COLORS = False
-
-import sempy.loopy.loopy_kernels as lpk
-
 from sempy.derivative import reference_derivative_matrix
 
 from sempy.gradient import gradient,gradient_2d,\
     gradient_transpose,gradient_transpose_2d
 
-def elliptic_ax(mesh,p):
+def elliptic_ax_2d(mesh,p):
+    nelem=mesh.get_num_elems()
+    Np=mesh.Np
+    Nq=mesh.Nq
+
+    g=mesh.get_geom()
+
+    p_=p.reshape((nelem,Np))
+    ap=np.zeros_like(p_)
+    for e in range(nelem):
+        px,py=gradient_2d(p_[e,:],Nq)
+
+        apx=g[e,0,0,:]*px+g[e,0,1,:]*py
+        apy=g[e,1,0,:]*px+g[e,1,1,:]*py
+
+        ap[e,:]=gradient_transpose_2d(apx,apy,Nq)
+
+    return ap.reshape((nelem*Np,))
+
+def elliptic_ax_3d(mesh,p):
     nelem=mesh.get_num_elems()
     Np=mesh.Np
     Nq=mesh.Nq
@@ -46,13 +45,18 @@ def elliptic_ax(mesh,p):
     return ap.reshape((nelem*Np,))
 
 def elliptic_cg(mesh,b,tol=1e-12,maxit=100,verbose=0):
-    rmult=mesh.get_rmult()
+    ndim=mesh.get_ndim()
+    if ndim==3:
+        elliptic_ax=elliptic_ax_3d
+    else:
+        elliptic_ax=elliptic_ax_2d
 
+    rmult=mesh.get_rmult()
     norm_b=np.dot(np.multiply(rmult,b),b)
     TOL=max(tol*tol*norm_b,tol*tol)
 
     r=b
-    rdotr=np.dot(np.multiply(rmult,r),r)
+    rdotr=norm_b
     if verbose:
         print('Initial rnorm={}'.format(rdotr))
 
@@ -87,9 +91,25 @@ def elliptic_cg(mesh,b,tol=1e-12,maxit=100,verbose=0):
 
     return x,niter
 
+import loopy as lp
+from loopy.version import LOOPY_USE_LANGUAGE_VERSION_2018_2
+from loopy.kernel.data import AddressSpace
+
+import pyopencl as cl
+import pyopencl.array
+import pyopencl.clrandom
+
+from sempy.types import SEMPY_SCALAR
+import sempy.loopy.loopy_kernels as lpk
+
+lp.set_caching_enabled(False)
+from warnings import filterwarnings,catch_warnings
+filterwarnings('error',category=lp.LoopyWarning)
+import loopy.options
+loopy.options.ALLOW_TERMINAL_COLORS = False
 
 def elliptic_cg_loopy(mesh,b,tol=1e-12,maxit=100,verbose=0):
-    ## Setup loopy
+    # Setup loopy
     platform = cl.get_platforms()
     my_gpu_devices = platform[0].get_devices(device_type=\
         cl.device_type.GPU)

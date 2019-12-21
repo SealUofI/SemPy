@@ -65,4 +65,3 @@ def gradient_transpose_2d(Wx,Wy,n):
     Us=np.dot(D.T,V)
 
     return Ur.reshape((nn,))+Us.reshape((nn,))
-

@@ -9,13 +9,12 @@ from sempy.gradient import gradient,gradient_2d,\
 
 from sempy.elliptic import elliptic_cg,elliptic_cg_loopy
 
-#from mayavi import mlab
-import matplotlib.pyplot as plt
+from mayavi import mlab
 
-N=10
+N=20
 n=N+1
 
-mesh=load_mesh("box001.msh")
+mesh=load_mesh("quad001.msh")
 mesh.find_physical_coordinates(N)
 mesh.establish_global_numbering()
 mesh.calc_geometric_factors()
@@ -30,23 +29,26 @@ Y=mesh.get_y()
 Z=mesh.get_z()
 J=mesh.get_jaco()
 B=mesh.get_mass()
+print(mesh.mask.reshape((n,n)))
 
-x=np.sin(np.pi*X)*np.sin(np.pi*Y)*np.sin(np.pi*Z)
+x=np.sin(np.pi*X)*np.sin(np.pi*Y)
 x=mesh.apply_mask(x)
 
-b=3*np.pi*np.pi*np.sin(np.pi*X)*np.sin(np.pi*Y)*np.sin(np.pi*Z)
+b=2*np.pi*np.pi*np.sin(np.pi*X)*np.sin(np.pi*Y)
 b=b*B*J
 b=mesh.dssum(b)
 b=mesh.apply_mask(b)
 
-x_cg,niter      =elliptic_cg(mesh,b,tol=1e-8,maxit=10000,verbose=0)
-x_cg_loopy,niter_loopy=elliptic_cg_loopy(mesh,b,tol=1e-8,maxit=10000,
-  verbose=0)
+x_cg,niter=elliptic_cg(mesh,b,tol=1e-8,maxit=10000,verbose=0)
+error=np.max(np.abs(x-x_cg))
+print("CG iters: {} error: {}".format(niter,error))
 
-print("CG iters (host/device): {}/{} error: {}"
-    .format(niter,niter_loopy,error))
-print("is nan? (host/device): {}/{}".format(np.isnan(x_cg).any(),
-    np.isnan(x_cg_loopy).any()))
 assert np.allclose(x,x_cg,1e-8)
-assert np.allclose(x,x_cg_loopy,1e-8)
-assert np.allclose(x_cg,x_cg_loopy,1e-8)
+
+plot_on=1
+if plot_on:
+    mlab.figure()
+    mlab.points3d(X,Y,Z,(x-x_cg),scale_mode="none",
+        scale_factor=0.1)
+    mlab.axes()
+    mlab.show()

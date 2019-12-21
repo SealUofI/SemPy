@@ -83,14 +83,24 @@ class Mesh:
         if not isinstance(fname,str):
             raise Exception("Only strings are allowed for file name")
         self.read(fname)
+        self.Np=-1
+        self.Nq=-1
 
     def read(self,fname):
         meshin=meshio.read(fname)
 
         ## element to vertex map
-        self.elem_to_vert_map=meshin.cells['hexahedron']
-        if len(self.elem_to_vert_map)==0: # 2D mesh
+        if 'hexahedron' in meshin.cells.keys(): #3D mesh
+            self.elem_to_vert_map=meshin.cells['hexahedron']
+            self.ndim=3
+        elif 'quad' in meshin.cells.keys(): #2D mesh
             self.elem_to_vert_map=meshin.cells['quad']
+            self.ndim=2
+        else:
+            raise Exception("Mesh format is not supported.")
+
+        ## Some sanity checks
+        assert len(meshin.points)>0
         assert len(self.elem_to_vert_map)>0
 
         ## number of elements
@@ -100,18 +110,15 @@ class Mesh:
         ## number of vertices
         self.num_verts=len(self.elem_to_vert_map[0,:])
 
-        ## dimension of the mesh
-        assert len(meshin.points)>0
-        self.ndim=len(meshin.points[0,:])
-
         ## setup face data
         self.num_faces  =2*self.ndim
         self.nface_verts=self.ndim+1
         if self.ndim==3:
             self.face_to_vert_map=np.array([[0,1,5,4],[1,2,6,5],\
                 [2,3,7,6],[3,0,4,7],[0,1,2,3],[4,5,6,7]])
-        else: #2D mesh
-            raise Exception("2D not supported yet.")
+        #TODO
+        #else: #2D mesh
+        #    raise Exception("2D not supported yet.")
 
         ## set co-ordinates of the element vertices
         self.x=[]
@@ -258,11 +265,11 @@ class Mesh:
 
                 xx=np.array([x[0],x[1],x[3],x[2]])
                 yy=np.array([y[0],y[1],y[3],y[2]])
-                zz=np.arraz([z[0],z[1],z[3],z[2]])
+                zz=np.array([z[0],z[1],z[3],z[2]])
 
-                xe=kron(J,J,J,xx)
-                ye=kron(J,J,J,yy)
-                ze=kron(J,J,J,zz)
+                xe=kron_2d(J,J,xx)
+                ye=kron_2d(J,J,yy)
+                ze=kron_2d(J,J,zz)
 
                 self.xe.append(xe)
                 self.ye.append(ye)
@@ -322,17 +329,17 @@ class Mesh:
                 self.geom.append(g)
         else:
             for e in range(self.get_num_elems()):
-                Xr,xs=gradient_2d(self.xe[e,:],n)
+                xr,xs=gradient_2d(self.xe[e,:],n)
                 yr,ys=gradient_2d(self.ye[e,:],n)
 
-                J=Xr*ys-yr*xs
+                J=xr*ys-yr*xs
                 self.jaco.append(J)
 
                 rx= ys/J
                 sx=-yr/J
 
                 ry=-xs/J
-                sy= Xr/J
+                sy= xr/J
 
                 g11=rx*rx+ry*ry
                 g12=rx*sx+ry*sy
@@ -420,7 +427,9 @@ class Mesh:
         zmax=np.max(self.ze)
 
         nelem=self.get_num_elems()
-        Np=self.Np
+        Np=self.get_local_dofs()
+        ndim=self.get_ndim()
+
         tol=1e-8
 
         self.mask=np.ones((nelem,Np))
@@ -434,10 +443,11 @@ class Mesh:
                     self.mask[e,n]=0
                 if abs(self.ye[e,n]-ymax)<tol:
                     self.mask[e,n]=0
-                if abs(self.ze[e,n]-zmin)<tol:
-                    self.mask[e,n]=0
-                if abs(self.ze[e,n]-zmax)<tol:
-                    self.mask[e,n]=0
+                if ndim==3:
+                    if abs(self.ze[e,n]-zmin)<tol:
+                        self.mask[e,n]=0
+                    if abs(self.ze[e,n]-zmax)<tol:
+                        self.mask[e,n]=0
 
         self.mask=self.mask.reshape((nelem*Np,))
 
@@ -479,7 +489,8 @@ class Mesh:
     def get_geom(self):
         nelem=self.get_num_elems()
         Np=self.Np
-        return np.array(self.geom).reshape((nelem,self.ndim,self.ndim,Np))
+        return np.array(self.geom).reshape((nelem,self.ndim,
+            self.ndim,Np))
 
     def get_jaco(self):
         nelem=self.get_num_elems()
@@ -490,6 +501,12 @@ class Mesh:
         nelem=self.get_num_elems()
         Np=self.Np
         return np.array(self.mass).reshape((nelem*Np,))
+
+    def get_1d_dofs(self):
+        return self.Nq
+
+    def get_local_dofs(self):
+        return self.Np
 
 def load_mesh(fname):
     dir_path=os.path.dirname(os.path.realpath(__file__))

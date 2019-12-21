@@ -10,9 +10,9 @@ def reference_mass_matrix_2d(p):
 
     n=p+1
     B=np.zeros((n*n,),dtype=np.float64)
-    for k in range(n):
-        for j in range(n):
-                B[j*n+k]=w[j]*w[k]
+    for j in range(n):
+        for i in range(n):
+                B[j*n+i]=w[i]*w[j]
 
     return B
 
