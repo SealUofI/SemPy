@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 N=10
 n=N+1
 
-mesh=load_mesh("box008.msh")
+mesh=load_mesh("box001.msh")
 mesh.find_physical_coordinates(N)
 mesh.establish_global_numbering()
 mesh.calc_geometric_factors()
@@ -52,16 +52,3 @@ print("is nan? (host/device): {}/{}".format(np.isnan(x_cg).any(),
 assert np.allclose(x,x_cg,1e-8)
 assert np.allclose(x,x_cg_loopy,1e-8)
 assert np.allclose(x_cg,x_cg_loopy,1e-8)
-
-"""
-plot_on=0
-if plot_on:
-    if example_2d:
-      print("N/A")
-    else:
-        mlab.figure()
-        mlab.points3d(X,Y,Z,u,\
-            scale_mode="scalar",scale_factor=0.05)
-        mlab.axes()
-        mlab.show()
-"""

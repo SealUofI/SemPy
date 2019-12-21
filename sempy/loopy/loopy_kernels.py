@@ -6,7 +6,7 @@ import pyopencl.clrandom
 from loopy.version import LOOPY_USE_LANGUAGE_VERSION_2018_2
 from loopy.kernel.data import AddressSpace
 
-#from sempy.types import SEMPY_SCALAR
+from sempy.types import SEMPY_SCALAR
 
 def gen_zero_boundary_knl():
     knl = lp.make_kernel(
