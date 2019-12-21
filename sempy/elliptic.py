@@ -26,10 +26,11 @@ from sempy.gradient import gradient,gradient_2d,\
     gradient_transpose,gradient_transpose_2d
 
 def elliptic_ax(mesh,p):
-    g=mesh.get_geom()
     nelem=mesh.get_num_elems()
     Np=mesh.Np
     Nq=mesh.Nq
+
+    g=mesh.get_geom()
 
     p_=p.reshape((nelem,Np))
     ap=np.zeros_like(p_)
@@ -92,7 +93,7 @@ def elliptic_cg_loopy(mesh,b,tol=1e-12,maxit=100,verbose=0):
     platform = cl.get_platforms()
     my_gpu_devices = platform[0].get_devices(device_type=\
         cl.device_type.GPU)
-    ctx = cl.create_some_context(interactive=True)
+    ctx = cl.create_some_context(interactive=False)
     queue = cl.CommandQueue(ctx)
 
     knl_wnorm = lpk.gen_weighted_norm_knl()
