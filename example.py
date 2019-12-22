@@ -150,7 +150,7 @@ class PlotStuff:
         plt.pause(0.2)
         plt.close()
 
-N=20
+N=4
 n=N+1
 
 mesh=load_mesh("quad001.msh")
@@ -174,7 +174,10 @@ RX=mesh.get_derv()
 
 Ah,Bh,Ch,Dh,z,w = semhat(N)
 
+Ra = 120000
 Pr = 0.8;
+Re = np.sqrt(Ra)
+Pe = Re*Pr
 Np1= N + 1
 E  = 1
 nL = Np1*Np1*E
