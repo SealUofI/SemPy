@@ -9,7 +9,9 @@ from sempy.interpolation import lagrange
 from sempy.derivative import lagrange_derivative_matrix,\
     reference_derivative_matrix
 
-from sempy.helmholtz import helmholtz
+from sempy.mass import reference_mass_matrix_1d
+
+from sempy.helmholtz import helmholtz,helmholtz_ax_2d
 
 from mayavi import mlab
 
@@ -25,19 +27,19 @@ def get_ic(mesh,IC_type):
         plotf = 100
         Re = 1000
         Pe = Re*Pr;
-    
+
         X *= np.pi
         Y *= np.pi
-    
+
         #v = d/dx psi
         v = np.cos(3*X)*np.cos(4*Y)+np.sin(5*Y)
         #u = -d/dy psi
         u = (3./4.)*np.sin(3*X)*np.sin(4*Y)+np.cos(5*X)
-    
+
         X /= np.pi
         Y /= np.pi
 
-        return u,v,plotf
+        return u,v,Re,plotf
 
     elif IC_type == 'KovaFlow':
         plotf = 10
@@ -50,7 +52,7 @@ def get_ic(mesh,IC_type):
         u = (lmbd/2./np.pi)*np.exp(lmbd*Y)*np.sin(2*np.pi*X)
         u = np.maximum(np.zeros_like(u), u)
 
-        return u,v,plotf
+        return u,v,Re,plotf
     else:
         y0 = 0; x0 = 0.5
         rr = np.sqrt(np.power(X-x0, 2) + np.power(Y-y0,2))
@@ -160,13 +162,14 @@ masked_ids=mesh.get_mask_ids()
 global_to_local,global_start=mesh.get_global_to_local_map()
 
 nelem=mesh.get_num_elems()
+Nq=mesh.get_1d_dofs()
+Np=mesh.get_local_dofs()
 
 X =mesh.get_x()
 Y =mesh.get_y()
 Z =mesh.get_z()
 G =mesh.get_geom()
 J =mesh.get_jaco()
-B =mesh.get_mass()
 RX=mesh.get_derv()
 
 Ah,Bh,Ch,Dh,z,w = semhat(N)
@@ -194,7 +197,7 @@ u= np.zeros_like(X);
 v= np.zeros_like(X);
 
 IC_type = 'KovaFlow'
-u,v,plotf=get_ic(mesh,IC_type)
+u,v,Re,plotf=get_ic(mesh,IC_type)
 
 ps=PlotStuff(1,Np1,X,Y,IC_type)
 ps.plot(u,v,0)
@@ -203,6 +206,9 @@ u2 =u.copy(); u3 =u.copy();
 v2 =v.copy(); v3 =v.copy();
 fy3=v.copy(); fy2=v.copy(); fy1 = v.copy();
 fx3=u.copy(); fx2=u.copy(); fx1 = u.copy();
+
+B=reference_mass_matrix_1d(Nq-1)
+nSteps=10
 
 for step in range(nSteps):
     print("Step {}: ".format(step))
@@ -247,64 +253,62 @@ for step in range(nSteps):
     ut = b0i*rx;
     vt = b0i*ry;
 
-    uL = ut
-    vL = vt
+    #uL=ut
+    #vL=vt
 
-"""
- # divergence free pressure update
- # check the HW writeup for details
- # uL,vL, pr = pressure_project(uL, vL, );
-
-    Qfudge     = b0*Bh # Q is not the same as gather/scatter
-    Qfudge_inv = np.linalg.inv(Qfudge)
-    E_inv      = np.linalg.inv(Dh*Qfudge_inv*Dh.T)
-
+    lmbda=dt/(b0*Re)
     def Hfun(vec):
-        # helmhotlz_ax
-        tmp = (vec).reshape((nL,), order="F")
-        vec = H.dot(tmp)
-        vec = vec.reshape((Np1,Np1,), order="F");
-        return vec
+        vec=helmholtz_ax_2d(mesh,vec,lmbda)
+        mesh.apply_mask(vec)
+        return vec*b0
 
-    u  = u.reshape((u.shape[0], u.shape[1],))
-    dp = -(1./dt)*E_inv*Dh*u
-    u  = u+dt*Hfun(Qfudge*Dh.T*dp)
-    uL  = u.reshape((u.shape[0], u.shape[1],1))
+    BB=b0*B
+    BB_inv=np.linalg.inv(BB)
+    E_inv = np.linalg.inv(Dh*BB*Dh.T)
 
-    v  = v.reshape((v.shape[0], v.shape[1],))
-    dp = -(1./dt)*E_inv*Dh*v
-    v  = v+dt*Hfun(Qfudge*Dh.T*dp)
-    vL  = v.reshape((v.shape[0], v.shape[1],1))
+    uu=u.reshape((nelem,Nq,Nq))
+    vv=v.reshape((nelem,Nq,Nq))
+    dpu=np.zeros_like(uu)
+    dpv=np.zeros_like(vv)
+    for e in range(nelem):
+        print(uu[e,:,:].shape)
+        print(Dh.shape)
+        print(E_inv.shape)
+        dpu[e,:,:] = -(1./dt)*np.dot(E_inv,np.dot(Dh,uu[e,:,:]))
+        dpu[e,:,:] = np.dot(BB,np.dot(Dh.T,dpu[e,:,:]))
+
+        dpv[e,:,:] = -(1./dt)*np.dot(E_inv,np.dot(Dh,vv[e,:,:]))
+        dpv[e,:,:] = np.dot(BB,np.dot(Dh.T,dpv[e,:,:]))
+
+    u  = u+dt*Hfun(dpu.reshape((nelem*Np,)))
+    v  = v+dt*Hfun(dpv.reshape((nelem*Np,)))
 
     # Set RHS.
-    B = B.reshape((Np1,Np1), order="F")
-    tmp = np.array((B*uL).reshape((nL,), order="F")).flatten()
-    u = Mask*tmp#Pointwise multiplication
-    tmp = np.array((B*vL).reshape((nL,), order="F")).flatten()
-    #v   = R*(Q.T*tmp)
-    v = Mask*tmp
+    B=B.reshape((Np1,Np1))
+    uu=u.reshape((nelem,Nq,Nq))
+    vv=v.reshape((nelem,Nq,Nq))
+    tmpu=np.zeros_like(u)
+    tmpv=np.zeros_like(v)
+    for e in range(nelem):
+        uu[e,:]=np.dot(B,uu[e,:])
+        vv[e,:]=np.dot(B,vv[e,:])
+
+    u=u.reshape((nelem*Np,))
+    v=v.reshape((nelem*Np,))
+
+    ##TODO
+    # mask(u,v)
+    mesh.apply_mask(u)
+    mesh.apply_mask(v)
+
     # Viscous update.
-    u = LUH.solve(u)
-    #u   = Q*(R.T*u)
-    v = LUH.solve(v)
-    #v   = Q*(R.T*v)
-    #Convert to local form.
-    u = u.reshape((Np1,Np1,E), order="F");
-    v = v.reshape((Np1,Np1,E), order="F")
-
-
-    #if step == 100:
-    #    exit()
+    u,niter=helmholtz(mesh,u,lmbda,tol=1e-7,maxit=100,verbose=0)
+    v,niter=helmholtz(mesh,v,lmbda,tol=1e-7,maxit=100,verbose=0)
 
     if step == 0:
         print('step\tvin\tvmax\tumin\tumax')
     if step % plotf == 0:
-        utmp = (Q*Q.T*u.reshape((Np1*Np1*E,))).reshape((Np1, Np1, E), order="F")
-        vtmp = (Q*Q.T*v.reshape((Np1*Np1*E,))).reshape((Np1, Np1, E), order="F")
-        #ps.plot(vtmp, X, Y, step+1)
-        ps.plot(utmp, vtmp, X, Y, step+1)
+        ps.plot(u,v,step+1)
         print("%d\t%f\t%f\t%f\t%f" %
                 (step, min(v.flatten()), max(v.flatten()),
                     min(u.flatten()), max(u.flatten())))
-
-"""

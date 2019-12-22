@@ -1,5 +1,7 @@
 import numpy as np
 
+from sempy.mass import reference_mass_matrix_1d
+
 from sempy.derivative import reference_derivative_matrix
 
 from sempy.gradient import gradient,gradient_2d,\
@@ -7,9 +9,22 @@ from sempy.gradient import gradient,gradient_2d,\
 
 from sempy.elliptic import elliptic_ax_2d,elliptic_ax_3d
 
+from sempy.kron import kron,kron_2d
+
 def helmholtz_ax_2d(mesh,p,lmbda):
+    nelem=mesh.get_num_elems()
+    Nq=mesh.get_1d_dofs()
+    Np=mesh.get_local_dofs()
+
+    B=reference_mass_matrix_1d(Nq-1)
+
+    p_=p.reshape((nelem,Np))
+    massp=np.zeros_like(p_)
+    for e in range(nelem):
+        massp[e,:]=kron_2d(B,B,p_[e,:])
+
     Ap=elliptic_ax_2d(mesh,p)
-    Ap=Ap+lmbda*np.multiply(mesh.get_mass(),p)
+    Ap=lmbda*Ap+massp.reshape((nelem*Np,))
     return Ap
 
 def helmholtz(mesh,b,lmbda,tol=1e-12,maxit=100,verbose=0):
