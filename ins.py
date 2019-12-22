@@ -7,8 +7,7 @@ from sempy.mesh import load_mesh
 from sempy.gradient import gradient,gradient_2d,\
     gradient_transpose,gradient_transpose_2d
 
-from sempy.elliptic import elliptic_cg,elliptic_cg_loopy
-
+from sempy.helmholtz import helmholtz
 from mayavi import mlab
 
 N=20
@@ -39,16 +38,16 @@ b=b*B*J
 b=mesh.dssum(b)
 b=mesh.apply_mask(b)
 
-x_cg,niter=elliptic_cg(mesh,b,tol=1e-8,maxit=10000,verbose=0)
-error=np.max(np.abs(x-x_cg))
+x_helm,niter=helmholtz(mesh,b,0.0,tol=1e-8,maxit=10000,verbose=0)
+error=np.max(np.abs(x-x_helm))
 print("CG iters: {} error: {}".format(niter,error))
 
-assert np.allclose(x,x_cg,1e-8)
+assert np.allclose(x,x_helm,1e-8)
 
 plot_on=1
 if plot_on:
     mlab.figure()
-    mlab.points3d(X,Y,Z,(x-x_cg),scale_mode="none",
+    mlab.points3d(X,Y,Z,(x-x_helm),scale_mode="none",
         scale_factor=0.1)
     mlab.axes()
     mlab.show()
