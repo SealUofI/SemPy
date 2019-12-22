@@ -28,7 +28,6 @@ Y=mesh.get_y()
 Z=mesh.get_z()
 J=mesh.get_jaco()
 B=mesh.get_mass()
-print(mesh.mask.reshape((n,n)))
 
 x=np.sin(np.pi*X)*np.sin(np.pi*Y)
 x=mesh.apply_mask(x)

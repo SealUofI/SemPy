@@ -284,6 +284,7 @@ class Mesh:
         self.geom = []
         self.jaco = []
         self.mass = []
+        self.derv = []
 
         if self.get_ndim()==3:
             for e in range(self.get_num_elems()):
@@ -315,6 +316,18 @@ class Mesh:
 
                 B=reference_mass_matrix_3d(n-1)
                 self.mass.append(B)
+
+                d=np.zeros((3,3,g11.size))
+                d[0,0,:]=rx
+                d[0,1,:]=sx
+                d[0,2,:]=tx
+                d[1,0,:]=ry
+                d[1,1,:]=sy
+                d[1,2,:]=ty
+                d[2,0,:]=rz
+                d[2,1,:]=sz
+                d[2,2,:]=tz
+                self.derv.append(d)
 
                 g=np.zeros((3,3,g11.size))
                 g[0,0,:]=g11*B*J
@@ -348,6 +361,13 @@ class Mesh:
                 B=reference_mass_matrix_2d(n-1)
                 self.mass.append(B)
 
+                d=np.zeros((2,2,g11.size))
+                d[0,0,:]=rx
+                d[0,1,:]=sx
+                d[1,0,:]=ry
+                d[1,1,:]=sy
+                self.derv.append(d)
+
                 g=np.zeros((2,2,g11.size))
                 g[0,0,:]=g11*B*J
                 g[0,1,:]=g12*B*J
@@ -358,10 +378,11 @@ class Mesh:
         self.geom=np.array(self.geom)
         self.jaco=np.array(self.jaco)
         self.mass=np.array(self.mass)
+        self.derv=np.array(self.derv)
 
     def establish_global_numbering(self):
         nelem=self.get_num_elems()
-        Np=self.Np
+        Np=self.get_local_dofs()
 
         points=[]
         count =0
@@ -461,7 +482,7 @@ class Mesh:
 
     def apply_mask(self,x):
         nelem=self.get_num_elems()
-        Np=self.Np
+        Np=self.get_local_dofs()
 
         for i in range(nelem*Np):
             x[i]=self.mask[i]*x[i]
@@ -470,17 +491,17 @@ class Mesh:
 
     def get_x(self):
         nelem=self.get_num_elems()
-        Np=self.Np
+        Np=self.get_local_dofs()
         return self.xe.reshape((nelem*Np,))
 
     def get_y(self):
         nelem=self.get_num_elems()
-        Np=self.Np
+        Np=self.get_local_dofs()
         return self.ye.reshape((nelem*Np,))
 
     def get_z(self):
         nelem=self.get_num_elems()
-        Np=self.Np
+        Np=self.get_local_dofs()
         return self.ze.reshape((nelem*Np,))
 
     def get_rmult(self):
@@ -488,19 +509,25 @@ class Mesh:
 
     def get_geom(self):
         nelem=self.get_num_elems()
-        Np=self.Np
-        return np.array(self.geom).reshape((nelem,self.ndim,
-            self.ndim,Np))
+        Np=self.get_local_dofs()
+        ndim=self.get_ndim()
+        return np.array(self.geom).reshape((nelem,ndim,ndim,Np))
 
     def get_jaco(self):
         nelem=self.get_num_elems()
-        Np=self.Np
+        Np=self.get_local_dofs()
         return np.array(self.jaco).reshape((nelem*Np,))
 
     def get_mass(self):
         nelem=self.get_num_elems()
-        Np=self.Np
+        Np=self.get_local_dofs()
         return np.array(self.mass).reshape((nelem*Np,))
+
+    def get_derv(self):
+        nelem=self.get_num_elems()
+        ndim=self.get_ndim()
+        Np=self.get_local_dofs()
+        return np.array(self.derv).reshape((nelem,ndim,ndim,Np))
 
     def get_1d_dofs(self):
         return self.Nq
