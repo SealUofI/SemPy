@@ -253,6 +253,230 @@ plt.xlabel("N - order"   ,fontsize=16)
 plt.legend(loc=0)
 plt.savefig('niter_fdm_cg.pdf',bbox_inches='tight')
 
+"""
+import numpy as np
+import scipy.sparse as sp
+from scipy.sparse.linalg import splu
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import axes3d
+from plot_stuff import *
+# SEM stuff
+#from make_q          import make_Q
+#from make_r          import make_R
+from setup_geometry  import setup_geometry
+from make_coef       import make_coef
+from semhat          import semhat
+from abar            import abar
+from zwgll           import zwgll
+from interp_mat      import *
+from convl           import *
+"""
+
+#Ra = 120000;
+Pr = 0.8;
+N  = 30; Np1 = N + 1
+E  = 1
+nL = Np1*Np1*E
+
+periodic=False
+Q    =  sp.eye(Np1*Np1)#Assume one element for now #make_Q(E, N, periodic=periodic)
+#R    =  np.eye(Np1*Np1)#make_R(Q,E,N, periodic=periodic)
+#R[0,0] = 0; R[-1,-1] = 0
+Mask = np.ones((Np1, Np1)); Mask[0,:]= 0; Mask[-1,:] = 0; Mask[:,-1] = 0; Mask[:,0] = 0;
+uMask = Mask.copy()
+uMask = uMask.flatten(order='F')
+vMask = Mask.copy()
+vMask = vMask.flatten(order='F')
+#IMask = Mask.copy(); #Add top condition for lid driven cavity
+print(Mask)
+
+X, Y = setup_geometry(E, N)
+
+G,J,ML,RX       = make_coef(X,Y)
+Ah,Bh,Ch,Dh,z,w = semhat(N)
+
+
+# Form A-bar
+n, nb = Mask.shape#R.shape
+nl = Np1*Np1*E
+
+Ab = Ah
+'''
+Ab_dense = np.zeros((nb,nb))
+for j in range(nb):
+    x = np.zeros((nb,))
+    x[j] = 1
+    Ab_dense[:,j] = abar(x,Dh,G,Q).round(18)
+Ab = sp.csr_matrix(Ab_dense)
+'''
+
+A = sp.kron(Ab,Ab)#Ab #A  = R*Ab*R.T
+Bb = ML.reshape((nl,),  order="F")
+#Bb = np.diag(Bb)
+#Bb = sp.diags(Bb, 0)
+#Bb = Q.T*Bb*Q
+Ma = Bb#Ma = R*Bb*R.T
+
+# compute dt according to CFL
+dxmin  = np.pi*(z[Np1-1]-z[N-1])/(2*E); # Get min dx for CFL constraint
+Tmax   = 150;
+CFL    = 0.3;
+dt     = CFL*dxmin;
+nSteps = int(np.ceil(Tmax/dt))
+dt     = Tmax/nSteps
+
+u   = 0*ML;
+v   = 0*ML;
+
+IC_type = 'KovaFlow'
+
+if IC_type == 'Eddy':
+    plotf = 100
+    # https://relate.cs.illinois.edu/course/tam570-f19/f/notes/walsh_1992.pdf
+    Re = 1000 #1e30 #np.sqrt(Ra);
+    Pe = Re*Pr;
+
+    X *= np.pi
+    Y *= np.pi
+
+    #v = d/dx psi
+    v = np.cos(3*X)*np.cos(4*Y)+np.sin(5*Y)
+    #u = -d/dy psi
+    u = (3./4.)*np.sin(3*X)*np.sin(4*Y)+np.cos(5*X)
+
+    X /= np.pi
+    Y /= np.pi
+elif IC_type == 'KovaFlow':
+    plotf = 10
+    Re = 40 #1e30 #np.sqrt(Ra);
+    Pe = Re*Pr;
+    # https://doc.nektar.info/userguide/4.3.4/user-guidese45.html
+    lmbd = 0.5*Re-np.sqrt(0.25*Re*Re+4*np.pi*np.pi)
+    v = 1.-np.exp(lmbd*Y)*np.cos(2*np.pi*X)
+    v = np.maximum(np.zeros_like(v), v)
+    u = (lmbd/2./np.pi)*np.exp(lmbd*Y)*np.sin(2*np.pi*X)
+    u = np.maximum(np.zeros_like(u), u)
+else:
+    y0 = 0; x0 = 0.5
+    rr = np.sqrt(np.power(X-x0, 2) + np.power(Y-y0,2))
+    u = np.maximum(np.zeros_like(rr), 1-rr*3)+v
+
+ps = PlotStuff(u, X, Y, IC_type)
+utmp = (Q*Q.T*u.reshape((Np1*Np1*E,))).reshape((Np1, Np1, E), order="F")
+vtmp = (Q*Q.T*v.reshape((Np1*Np1*E,))).reshape((Np1, Np1, E), order="F")
+#ps.plot(utmp, X, Y, 0)
+ps.plot(utmp, vtmp, X, Y, 0)
+
+u2  = u.copy(); u3  = u.copy();
+v2  = v.copy(); v3  = v.copy();
+fy3 = v.copy(); fy2 = v.copy(); fy1 = v.copy();
+fx3 = u.copy(); fx2 = u.copy(); fx1 = u.copy();
+
+for step in range(nSteps):
+
+    if step == 0:
+        b0 = 1.0
+        b  = np.array([-1, 0, 0])
+        a  = np.array([ 1, 0, 0])
+    elif step == 1:
+        b0 = 1.5
+        b  = np.array([-4, 1, 0])/2
+        a  = np.array([ 2,-1, 0])
+    elif step == 2:
+        b0 = 11./6.
+        b  = np.array([-18, 9, -2])/6
+        a  = np.array([  3,-3,  1])
+
+    if step<=3:
+        #A = np.eye(Np1*Np1) # Overwrite for now to get past
+        H     = (Ma+ A*dt/(b0*Re))
+        LUH   = splu(H)
+        b0i=1./b0
+    vc = X
+    uc = -Y
+
+    #   Nonlinear step - unassembled, not multiplied by mass matrix
+    fx1 = -convl(u,RX,Dh,uc,vc); # du = Cu  (without mass matrix)
+    fy1 = -convl(v,RX,Dh,uc,vc); # dv = Cv
+
+
+    rx  = a[0]*fx1+a[1]*fx2+a[2]*fx3; # kth-order extrapolation
+    ry  = a[0]*fy1+a[1]*fy2+a[2]*fy3;
+    fx3 = fx2; fx2 = fx1
+    fy3 = fy2; fy2 = fy1
+
+    # Add BDF terms and save old values
+    rx  = dt*rx - (b[0]*u+b[1]*u2+b[2]*u3)
+    u3  = u2
+    u2  = u
+    ry  = dt*ry - (b[0]*v+b[1]*v2+b[2]*v3)
+    v3  = v2
+    v2  = v
+
+    # Tentative fields
+    ut  = b0i*rx;
+    vt = b0i*ry;
+
+    uL = ut
+    vL = vt
+
+ # divergence free pressure update
+ # check the HW writeup for details
+ #   uL,vL, pr = pressure_project(uL, vL, );
+    Qfudge     = b0*Bh # Q is not the same as gather/scatter
+    Qfudge_inv = np.linalg.inv(Qfudge)
+    E_inv      = np.linalg.inv(Dh*Qfudge_inv*Dh.T)
+    def Hfun(vec):
+        tmp = (vec).reshape((nL,), order="F")
+        #tmp = R*(Q.T*tmp)
+        vec = H.dot(tmp)
+       #vec = Q*(R.T*vec)
+        vec = vec.reshape((Np1,Np1,), order="F");
+        return vec
+
+    u  = u.reshape((u.shape[0], u.shape[1],))
+    dp = -(1./dt)*E_inv*Dh*u
+    u  = u+dt*Hfun(Qfudge*Dh.T*dp)
+    uL  = u.reshape((u.shape[0], u.shape[1],1))
+
+    v  = v.reshape((v.shape[0], v.shape[1],))
+    dp = -(1./dt)*E_inv*Dh*v
+    v  = v+dt*Hfun(Qfudge*Dh.T*dp)
+    vL  = v.reshape((v.shape[0], v.shape[1],1))
+
+    # Set RHS.
+    ML = ML.reshape((Np1,Np1), order="F")
+    tmp = np.array((ML*uL).reshape((nL,), order="F")).flatten()
+    u = uMask*tmp#Pointwise multiplication
+    tmp = np.array((ML*vL).reshape((nL,), order="F")).flatten()
+    #v   = R*(Q.T*tmp)
+    v = vMask*tmp
+    # Viscous update.
+    u   = LUH.solve(u)
+    #u   = Q*(R.T*u)
+    v   = LUH.solve(v)
+    #v   = Q*(R.T*v)
+    #Convert to local form.
+    u   = u.reshape((Np1,Np1,E), order="F");
+    v   = v.reshape((Np1,Np1,E), order="F")
+
+
+    #if step == 100:
+    #    exit()
+
+    if step == 0:
+        print('step\tvin\tvmax\tumin\tumax')
+    if step % plotf == 0:
+        utmp = (Q*Q.T*u.reshape((Np1*Np1*E,))).reshape((Np1, Np1, E), order="F")
+        vtmp = (Q*Q.T*v.reshape((Np1*Np1*E,))).reshape((Np1, Np1, E), order="F")
+        #ps.plot(vtmp, X, Y, step+1)
+        ps.plot(utmp, vtmp, X, Y, step+1)
+        print("%d\t%f\t%f\t%f\t%f" %
+                (step, min(v.flatten()), max(v.flatten()),
+                    min(u.flatten()), max(u.flatten())))
+
+
+
 #if plot_on:
 #    if example_2d:
 #      print("N/A")
