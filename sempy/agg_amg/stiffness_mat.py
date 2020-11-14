@@ -164,7 +164,7 @@ def fem_mat(p,t):
     BL=BL+Ad
 
     print(np.reshape(t.T, (nl,)))
-    Q  = sp.csr_matrix(np.ones((nl,)), (np.arange(nl),np.reshape(t.T, (nl,))));
+    Q  = sp.csr_matrix((np.ones((nl,)), (np.arange(nl),np.reshape(t.T, (nl,)))));
 
     return (AL, BL, Q)
 
