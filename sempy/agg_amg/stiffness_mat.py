@@ -35,7 +35,7 @@ def get_maskl(t):
     ptr[0,2]=3; ptr[1,2]=1;
 
     maskL=np.ones(E,2);
-    for e in range(0:E):
+    for e in range(0,E):
         for j in range(0,3):
             if flag[j,e]==0: 
                 maskL[e,ptr[:,j]]=0
