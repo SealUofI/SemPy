@@ -123,23 +123,22 @@ def fem_mat(p,t):
         B1[0,0,:] = area/3;
         B1[1,1,:] = area/3;
         B1[2,2,:] = area/3;
-    end;
 
     # for e=0:nt-1;        THIS APPROACH IS WAY TOO SLOW
     #   AL(3*e+(1:3),3*e+(1:3)) = A1(:,:,e+1);
     #   BL(3*e+(1:3),3*e+(1:3)) = B1(:,:,e+1);
     # end;
 
-    d0=np.zeros((2,nt));        # main diagonal
-    d1=np.zeros((2,nt));        # 1st lower diagonal
-    d2=np.zeros((2,nt));        # 2nd lower diagonal
+    d0=np.zeros((3,nt));        # main diagonal
+    d1=np.zeros((3,nt));        # 1st lower diagonal
+    d2=np.zeros((3,nt));        # 2nd lower diagonal
 
     d0[0,:]=A1[0,0,:];
     d0[1,:]=A1[1,1,:];
-    d0[2,:]=A1[2,2,:];     d0=np.reshape(d0,(nl,0));
+    d0[2,:]=A1[2,2,:];     d0=np.reshape(d0,(nl,));
     d1[0,:]=A1[1,0,:];
-    d1[1,:]=A1[2,1,:];     d1=np.reshape(d1,(nl,0));
-    d2[0,:]=A1[2,0,:];     d2=np.reshape(d2,(nl,0));
+    d1[1,:]=A1[2,1,:];     d1=np.reshape(d1,(nl,));
+    d2[0,:]=A1[2,0,:];     d2=np.reshape(d2,(nl,));
 
 
     #AL = spalloc(nl,nl,9*nl); BL = AL.copy();
@@ -148,16 +147,16 @@ def fem_mat(p,t):
     Ad=sp.diags(d0,offsets=0,shape=(nl,nl))
     AL=AL+Ad;
 
-    d0=np.zeros((2,nt));        # main diagonal
-    d1=np.zeros((2,nt));        # 1st lower diagonal
-    d2=np.zeros((2,nt));        # 2nd lower diagonal
+    d0=np.zeros((3,nt));        # main diagonal
+    d1=np.zeros((3,nt));        # 1st lower diagonal
+    d2=np.zeros((3,nt));        # 2nd lower diagonal
 
     d0[0,:]=B1[0,0,:];
     d0[1,:]=B1[1,1,:];
-    d0[2,:]=B1[2,2,:];     d0=reshape(d0,nl,0);
+    d0[2,:]=B1[2,2,:];     d0=np.reshape(d0,(nl,));
     d1[0,:]=B1[1,0,:];
-    d1[1,:]=B1[2,1,:];     d1=reshape(d1,nl,0);
-    d2[0,:]=B1[2,0,:];     d2=reshape(d2,nl,0);
+    d1[1,:]=B1[2,1,:];     d1=np.reshape(d1,(nl,));
+    d2[0,:]=B1[2,0,:];     d2=np.reshape(d2,(nl,));
 
     BL=sp.diags([d2, d1],offsets=(-2,-1),shape=(nl,nl));
     BL=BL+BL.T;
