@@ -54,11 +54,11 @@ def get_maskl(t):
     gbdry=np.zeros((ng,1));  nbdry=0;
     for e in range(E):
         for j in range(3):
-            g = t[e,j];
-            maskL[e,j]=flag[g];
-            if flag[g]==0;
-                nbdry = nbdry+1;
-                gbdry[nbdry]=g;
+            g = t[e,j]
+            maskL[e,j]=flag[g]
+            if flag[g]==0:
+                nbdry = nbdry+1
+                gbdry[nbdry]=g
 
     return maskL, gbdry
 
