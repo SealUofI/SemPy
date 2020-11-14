@@ -8,7 +8,8 @@ def precond(r, A, J0, prec):
     elif prec == 1:
         z = vcycle(r, A, 0, J0)
     elif prec == 2:
-        z = kcycle(r, A, 0, J0)
+        #z = kcycle(r, A, 0, J0)
+        print("K-cycle is not implemented yet.")
 
     return z
 
@@ -28,8 +29,8 @@ def project(r, A, J0, tol, prec):
     rz1 = np.dot(r, z)
     p = z
 
-    P = np.zeros(n, 5)
-    W = P
+    P = np.zeros(n, max_iter)
+    W = np.zeros_like(P)
 
     res = []
 

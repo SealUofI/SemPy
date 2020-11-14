@@ -39,13 +39,11 @@ def vcycle(rhs, A, level, J0):
             e2 = np.ones((2, 1))
             J = sp.kron(I, e2)
 
-        level1 = level+1
-
         r = np.dot(J.T, r)
         Ar = np.dot(J.T, np.dot(A, J))
 
         over = 1.4
-        e = vcycle(r, Ar, level1, J)
+        e = vcycle(r, Ar, level+1, J)
         u = u+over*np.dot(J, e)
 
         r = rhs-np.dot(A, u)
