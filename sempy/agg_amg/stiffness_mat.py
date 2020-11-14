@@ -76,10 +76,8 @@ def fem_mat(p,t):
     aream = np.min(area)
     areaM = np.max(area)
 
-    eflip = np.nonzero(area<0)
+    eflip = np.flatnonzero(area<0)
     nflip = len(eflip)
-    # This will probably break,
-    # np.nonzero returns tuples I think.
     if nflip > 0:
         temp = t[eflip, 2]
         t[eflip,2] = t[eflip,3]
