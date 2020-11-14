@@ -63,7 +63,7 @@ def get_maskl(t):
     return maskL, gbdry
 
 def fem_mat(p,t):
-    nt = t.shape[0] - 1
+    nt = t.shape[0]
     nl = 3*nt
 
     y23 = p[t[:,1],1] - p[t[:,2],1]
