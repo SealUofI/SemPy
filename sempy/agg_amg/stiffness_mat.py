@@ -109,9 +109,9 @@ def fem_mat(p,t):
     A1[2,1,:] = area4i*( y12*y31+x21*x13 );
     A1[2,2,:] = area4i*( y12*y12+x21*x21 );
 
-    dmass=1;         % Diagonal mass matrix
-    dmass=0;         % Full (local) mass matix
-    if dmass==0; 
+    dmass=1         # Diagonal mass matrix
+    dmass=0         # Full (local) mass matix
+    if dmass==0: 
         B1[0,0,:] = area/6;
         B1[0,1,:] = area/12;
         B1[0,2,:] = area/12;
