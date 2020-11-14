@@ -5,8 +5,8 @@ def get_maskl(t):
     E = t.shape[0]
     ng = np.max(np.max(t)) # Ce n'est pas correct probablemente.
 
-    etmp = t.T; etmp = np.append(etmp, etmp[0,:], axis=0)
-    edge=np.zeros(6,E)
+    etmp = t.T; etmp = np.vstack((etmp, etmp[0]))
+    edge=np.zeros((6,E))
     edge[0:2,:] = etmp[0:2,:];
     edge[2:4,:] = etmp[1:3,:];
     edge[4:6,:] = etmp[2:4,:];
@@ -182,8 +182,8 @@ def stiffness_mat(p,t):
     yb=p[t1,1]
 
     AL, BL, Q = fem_mat(p,t)
-    exit()
     maskL,gbdry = get_maskl(t)
+    exit()
 
     #   Here, add Dirichlet/Neumann discriminators, if desired.
 
