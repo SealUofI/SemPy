@@ -16,7 +16,7 @@ def get_maskl(t):
 
     [edge,ind]=sortrows(edge); # FIXME
 
-    nedge=edge.shape[0]; flag=np.zeros((nedge,1));
+    nedge=edge.shape[0]; flag=np.zeros((nedge,));
 
     ## Mark non-isolated edges with flag=1
     for k in range(0,nedge):
@@ -24,7 +24,7 @@ def get_maskl(t):
             flag[k]=flag[k]+1; 
             flag[k+1]=flag[k+1]+1;
 
-    flag(ind)=flag;               
+    flag[ind]=flag;               
     ## Map edge flags back to original 3xE ordering.
     flag=np.reshape(flag,(3,E));
 
@@ -121,7 +121,7 @@ def fem_mat(p,t):
         B1[2,0,:] = area/12;
         B1[2,1,:] = area/12;
         B1[2,2,:] = area/6;
-    else
+    else:
         B1[0,0,:] = area/3;
         B1[1,1,:] = area/3;
         B1[2,2,:] = area/3;
@@ -145,7 +145,7 @@ def fem_mat(p,t):
 
 
     #AL = spalloc(nl,nl,9*nl); BL = AL.copy();
-    AL=sp.diags((d2 d1),offsets=(-2,-1), shape=(nl,nl))
+    AL=sp.diags((d2, d1),offsets=(-2,-1), shape=(nl,nl))
     AL=AL+AL.T
     Ad=sp.diags(d0,offsets=0,shape=(nl,nl))
     AL=AL+Ad;
@@ -161,7 +161,7 @@ def fem_mat(p,t):
     d1[1,:]=B1[2,1,:];     d1=reshape(d1,nl,0);
     d2[0,:]=B1[2,0,:];     d2=reshape(d2,nl,0);
 
-    BL=sp.diags([d2 d1],offsets=(-2,-1),shape=(nl,nl));
+    BL=sp.diags([d2, d1],offsets=(-2,-1),shape=(nl,nl));
     BL=BL+BL.T;
     Ad=sp.diags(d0,offsets=0,shape=(nl,nl));
     BL=BL+Ad
@@ -183,8 +183,9 @@ def stiffness_mat(p,t):
     xb = p[t1,0]
     yb=p[t1,1]
 
-    AL, BL, Q = fem_mats(p,t)
-    maskL,gbdry = get_maskl(t) # Need to write this function
+    AL, BL, Q = fem_mat(p,t)
+    exit()
+    maskL,gbdry = get_maskl(t)
 
     #   Here, add Dirichlet/Neumann discriminators, if desired.
 
