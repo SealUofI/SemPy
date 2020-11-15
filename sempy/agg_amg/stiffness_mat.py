@@ -13,11 +13,18 @@ def get_maskl(t):
     edge=np.reshape(edge,(2,3*E));
 
     edge=np.sort(edge,axis=0); edge=edge.T;
-
+    
     # Is this the same as matlab
-    ind = np.argsort(edge, axis=0)
-    np.take_along_axis(edge, ind, axis=0)
+    ind = np.lexsort((edge[:,1],edge[:,0]))
+    edge = edge[ind]
+    #print(edge)
+    #print(ind)
+    #ind = np.argsort(edge, axis=0)
+    #edge = edge[ind[:,0]]
+    #np.take_along_axis(edge, ind, axis=0)
+    #print(edge)
     #[edge,ind]=sortrows(edge); # FIXME
+    #exit()
 
     nedge=edge.shape[0]; flag=np.zeros((nedge,));
 
@@ -27,7 +34,7 @@ def get_maskl(t):
             flag[k]=flag[k]+1; 
             flag[k+1]=flag[k+1]+1;
     
-    flag[ind[:,0]]=flag;               
+    flag[ind]=flag;               
     ## Map edge flags back to original 3xE ordering.
     flag=np.reshape(flag,(3,E));
 
