@@ -60,7 +60,7 @@ def get_maskl(t):
             g = t[e,j]
             flag[g]=flag[g]*maskL[e,j];
 
-    gbdry=np.zeros((ng,));  nbdry=-1;
+    gbdry=np.zeros((ng,), dtype=np.int32);  nbdry=-1;
     for e in range(E):
         for j in range(3):
             g = t[e,j]
@@ -190,8 +190,24 @@ def stiffness_mat(p,t):
     yb=p[t1,1]
 
     AL, BL, Q = fem_mat(p,t)
+    '''
+    for A in [AL,BL,Q]:
+        print(A.shape)
+        print(np.any(np.isnan(A.todense())))
+        print(np.linalg.norm(A.todense()))
+        print()
+    '''
+   
     maskL,gbdry = get_maskl(t)
-    exit()
+    '''
+    for A in [maskL,gbdry]:
+        print(A.shape)
+        print(np.any(np.isnan(A)))
+        print(np.linalg.norm(A))
+        print()
+    '''
+
+    #exit()
 
     #   Here, add Dirichlet/Neumann discriminators, if desired.
 
@@ -208,8 +224,9 @@ def stiffness_mat(p,t):
     ir = np.arange(nb)
     n = nb-gbdry.shape[0]
     ir[gbdry] = ir[gbdry] + 2*nb
-    i_s,ind=np.sort(ir); ind=ind[:n];
-    P = sp.eye(nb); P=P[:,ind]; R=P.T
+
+    ind = np.lexsort(ir); i_s = ir[ind]
+    P = sp.eye(nb).tocsr(); P=P[:,ind]; R=P.T
 
     #n = nb-gbdry.shape[0]
 
