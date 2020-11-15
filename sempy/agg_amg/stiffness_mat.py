@@ -3,7 +3,7 @@ import scipy.sparse as sp
 
 def get_maskl(t):
     E = t.shape[0]
-    ng = np.max(np.max(t)) # Ce n'est pas correct probablemente.
+    ng = np.max(np.max(t)) + 1 # Ce n'est pas correct probablemente.
 
     etmp = t.T; etmp = np.vstack((etmp, etmp[0]))
     edge=np.zeros((6,E))
@@ -37,7 +37,7 @@ def get_maskl(t):
     ptr[0,2]=2; ptr[1,2]=0;
 
     maskL=np.ones((E,3));
-    for e in range(0,E):
+    for e in range(E):
         for j in range(3):
             if flag[j,e]==0: 
                 maskL[e,ptr[:,j]]=0
@@ -47,13 +47,13 @@ def get_maskl(t):
     #
 
 
-    flag=np.ones((ng,1));
+    flag=np.ones((ng,));
     for e in range(E):
         for j in range(3):
             g = t[e,j]
             flag[g]=flag[g]*maskL[e,j];
 
-    gbdry=np.zeros((ng,1));  nbdry=0;
+    gbdry=np.zeros((ng,));  nbdry=-1;
     for e in range(E):
         for j in range(3):
             g = t[e,j]
