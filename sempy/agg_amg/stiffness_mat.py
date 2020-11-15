@@ -1,21 +1,26 @@
 import numpy as np
 import scipy.sparse as sp
+np.set_printoptions(threshold=np.inf)
 
 def get_maskl(t):
     E = t.shape[0]
     ng = np.max(np.max(t)) + 1 # Ce n'est pas correct probablemente.
 
     etmp = t.T; etmp = np.vstack((etmp, etmp[0]))
-    edge=np.zeros((6,E))
+    edge=np.zeros((6,E),dtype=np.int32)
     edge[0:2,:] = etmp[0:2,:];
     edge[2:4,:] = etmp[1:3,:];
     edge[4:6,:] = etmp[2:4,:];
-    edge=np.reshape(edge,(2,3*E));
+    edge=np.reshape(edge,(3*E,2)).T;
+    
 
+    #edge = edge[np.lexsort(edge[0,:])];
+    #edge=edge.T
     edge=np.sort(edge,axis=0); edge=edge.T;
     
     # Is this the same as matlab
     ind = np.lexsort((edge[:,1],edge[:,0]))
+    print(ind)
     edge = edge[ind]
     #print(edge)
     #print(ind)
@@ -47,6 +52,7 @@ def get_maskl(t):
     for e in range(E):
         for j in range(3):
             if flag[j,e]==0: 
+                #print((j,e))
                 maskL[e,ptr[:,j]]=0
 
     #
@@ -68,6 +74,9 @@ def get_maskl(t):
             if flag[g]==0:
                 nbdry = nbdry+1
                 gbdry[nbdry]=g
+
+    gbdry = gbdry[:nbdry]
+    gbdry = np.unique(gbdry);
 
     return maskL, gbdry
 
@@ -190,23 +199,13 @@ def stiffness_mat(p,t):
     yb=p[t1,1]
 
     AL, BL, Q = fem_mat(p,t)
-    '''
-    for A in [AL,BL,Q]:
-        print(A.shape)
-        print(np.any(np.isnan(A.todense())))
-        print(np.linalg.norm(A.todense()))
-        print()
-    '''
-   
+
     maskL,gbdry = get_maskl(t)
-    '''
     for A in [maskL,gbdry]:
         print(A.shape)
         print(np.any(np.isnan(A)))
         print(np.linalg.norm(A))
         print()
-    '''
-
     #exit()
 
     #   Here, add Dirichlet/Neumann discriminators, if desired.
@@ -231,6 +230,13 @@ def stiffness_mat(p,t):
     #n = nb-gbdry.shape[0]
 
     # Plotting code not implemented
+
+    #for A in (AL, BL, Q, R):
+    #    print(A.shape)
+    #    #print(np.any(np.isnan(A)))
+    #    print(np.linalg.norm(A))
+    #    print()
+       
 
     return (AL, BL, Q, R, xb, yb, p, t)
 
