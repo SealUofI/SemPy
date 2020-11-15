@@ -1,6 +1,6 @@
 import numpy as np
 import scipy.sparse as sp
-#np.set_printoptions(threshold=np.inf)
+np.set_printoptions(threshold=np.inf)
 
 def get_maskl(t):
     E = t.shape[0]
@@ -60,7 +60,7 @@ def get_maskl(t):
                 nbdry = nbdry+1
                 gbdry[nbdry]=g
 
-    #gbdry = gbdry[:nbdry]
+    gbdry = gbdry[:nbdry]
     gbdry = np.unique(gbdry);
 
     return maskL, gbdry
@@ -197,13 +197,18 @@ def stiffness_mat(p,t):
 
 
     ### Set up restriction/permutation matrix to make boundary nodes last
-
     ir = np.arange(nb)
     n = nb-gbdry.shape[0]
-    ir[gbdry] = ir[gbdry] + 2*nb
-
-    ind = np.lexsort(ir); i_s = ir[ind]
-    P = sp.eye(nb).tocsr(); P=P[:,ind]; R=P.T
+    temp_ir = ir.copy()
+    temp_ir[gbdry] = ir[gbdry] + 2*nb
+    ir = temp_ir
+    #ind = np.lexsort((ir,)); 
+    ind = np.argsort(ir);
+    #i_s = ir[ind]; 
+    ind=ind[:n]
+    
+    P = sp.eye(nb).tocsr(); 
+    P=P[:,ind]; R=P.T
 
     #n = nb-gbdry.shape[0]
 
@@ -215,9 +220,6 @@ def stiffness_mat(p,t):
     #    print(np.linalg.norm(A))
     #    print()
        
-    print(np.linalg.norm(np.cumsum(xb)))
-    print(np.linalg.norm(np.cumsum(yb)))
-
     return (AL, BL, Q, R, xb, yb, p, t)
 
 if __name__ ==  "__main__":
