@@ -27,21 +27,18 @@ def get_maskl(t):
             flag[k]=flag[k]+1; 
             flag[k+1]=flag[k+1]+1;
     
-    #flag[ind]=flag;               
+    flag[ind[:,0]]=flag;               
     ## Map edge flags back to original 3xE ordering.
     flag=np.reshape(flag,(3,E));
-    print(flag[ind].shape)
-    exit()
-    #flag[ind]=flag;               
 
-    ptr = np.zeros((2,3));         ## Zero out local mask entries for any isolated edge
-    ptr[0,0]=1; ptr[1,0]=2;
-    ptr[0,1]=2; ptr[1,1]=3;
-    ptr[0,2]=3; ptr[1,2]=1;
+    ptr = np.zeros((2,3),dtype=np.int32);         ## Zero out local mask entries for any isolated edge
+    ptr[0,0]=0; ptr[1,0]=1;
+    ptr[0,1]=1; ptr[1,1]=2;
+    ptr[0,2]=2; ptr[1,2]=0;
 
-    maskL=np.ones(E,2);
+    maskL=np.ones((E,3));
     for e in range(0,E):
-        for j in range(0,3):
+        for j in range(3):
             if flag[j,e]==0: 
                 maskL[e,ptr[:,j]]=0
 
