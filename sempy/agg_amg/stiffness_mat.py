@@ -1,47 +1,35 @@
 import numpy as np
 import scipy.sparse as sp
-np.set_printoptions(threshold=np.inf)
+#np.set_printoptions(threshold=np.inf)
 
 def get_maskl(t):
     E = t.shape[0]
-    ng = np.max(np.max(t)) + 1 # Ce n'est pas correct probablemente.
+    ng = np.max(np.max(t)) + 1
 
     etmp = t.T; etmp = np.vstack((etmp, etmp[0]))
-    edge=np.zeros((6,E),dtype=np.int32)
+    edge=np.zeros((6,E),dtype=np.int64)
     edge[0:2,:] = etmp[0:2,:];
     edge[2:4,:] = etmp[1:3,:];
     edge[4:6,:] = etmp[2:4,:];
-    edge=np.reshape(edge,(3*E,2)).T;
-    
+    edge=np.reshape(edge,(2,3*E),order='F');
 
-    #edge = edge[np.lexsort(edge[0,:])];
-    #edge=edge.T
     edge=np.sort(edge,axis=0); edge=edge.T;
-    
-    # Is this the same as matlab
     ind = np.lexsort((edge[:,1],edge[:,0]))
-    print(ind)
     edge = edge[ind]
-    #print(edge)
-    #print(ind)
-    #ind = np.argsort(edge, axis=0)
-    #edge = edge[ind[:,0]]
-    #np.take_along_axis(edge, ind, axis=0)
-    #print(edge)
-    #[edge,ind]=sortrows(edge); # FIXME
-    #exit()
 
-    nedge=edge.shape[0]; flag=np.zeros((nedge,));
+    nedge=edge.shape[0]; flag=np.zeros((nedge,),dtype=np.int32);
 
     ## Mark non-isolated edges with flag=1
-    for k in range(0,nedge-1):
+    for k in range(nedge-1):
         if np.all(edge[k,:]==edge[k+1,:]):
             flag[k]=flag[k]+1; 
             flag[k+1]=flag[k+1]+1;
     
-    flag[ind]=flag;               
-    ## Map edge flags back to original 3xE ordering.
-    flag=np.reshape(flag,(3,E));
+    # Numpy bug, same vector can't be on both sides
+    temp_flag = np.zeros_like(flag)
+    temp_flag[ind] = flag
+    flag = temp_flag
+    flag=np.reshape(flag,(3,E),order="F");
 
     ptr = np.zeros((2,3),dtype=np.int32);         ## Zero out local mask entries for any isolated edge
     ptr[0,0]=0; ptr[1,0]=1;
@@ -52,14 +40,11 @@ def get_maskl(t):
     for e in range(E):
         for j in range(3):
             if flag[j,e]==0: 
-                #print((j,e))
                 maskL[e,ptr[:,j]]=0
 
     #
     #   Share boundary vertices flagged by isolated edges with neighboring elements
     #
-
-
     flag=np.ones((ng,));
     for e in range(E):
         for j in range(3):
@@ -75,7 +60,7 @@ def get_maskl(t):
                 nbdry = nbdry+1
                 gbdry[nbdry]=g
 
-    gbdry = gbdry[:nbdry]
+    #gbdry = gbdry[:nbdry]
     gbdry = np.unique(gbdry);
 
     return maskL, gbdry
@@ -159,7 +144,6 @@ def fem_mat(p,t):
     d2[0,:]=A1[2,0,:];     d2=np.reshape(d2,(nl,));
 
 
-    #AL = spalloc(nl,nl,9*nl); BL = AL.copy();
     AL=sp.diags((d2, d1),offsets=(-2,-1), shape=(nl,nl))
     AL=AL+AL.T
     Ad=sp.diags(d0,offsets=0,shape=(nl,nl))
@@ -201,12 +185,6 @@ def stiffness_mat(p,t):
     AL, BL, Q = fem_mat(p,t)
 
     maskL,gbdry = get_maskl(t)
-    for A in [maskL,gbdry]:
-        print(A.shape)
-        print(np.any(np.isnan(A)))
-        print(np.linalg.norm(A))
-        print()
-    #exit()
 
     #   Here, add Dirichlet/Neumann discriminators, if desired.
 
@@ -237,6 +215,8 @@ def stiffness_mat(p,t):
     #    print(np.linalg.norm(A))
     #    print()
        
+    print(np.linalg.norm(np.cumsum(xb)))
+    print(np.linalg.norm(np.cumsum(yb)))
 
     return (AL, BL, Q, R, xb, yb, p, t)
 
