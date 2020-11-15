@@ -14,20 +14,25 @@ def get_maskl(t):
 
     edge=np.sort(edge,axis=0); edge=edge.T;
 
-    [edge,ind]=sortrows(edge); # FIXME
+    # Is this the same as matlab
+    ind = np.argsort(edge, axis=0)
+    np.take_along_axis(edge, ind, axis=0)
+    #[edge,ind]=sortrows(edge); # FIXME
 
     nedge=edge.shape[0]; flag=np.zeros((nedge,));
 
     ## Mark non-isolated edges with flag=1
-    for k in range(0,nedge):
-        if edge[k,:]==edge[k+1,:]:
+    for k in range(0,nedge-1):
+        if np.all(edge[k,:]==edge[k+1,:]):
             flag[k]=flag[k]+1; 
             flag[k+1]=flag[k+1]+1;
-
-    flag[ind]=flag;               
+    
+    #flag[ind]=flag;               
     ## Map edge flags back to original 3xE ordering.
     flag=np.reshape(flag,(3,E));
-
+    print(flag[ind].shape)
+    exit()
+    #flag[ind]=flag;               
 
     ptr = np.zeros((2,3));         ## Zero out local mask entries for any isolated edge
     ptr[0,0]=1; ptr[1,0]=2;
@@ -163,7 +168,6 @@ def fem_mat(p,t):
     Ad=sp.diags(d0,offsets=0,shape=(nl,nl));
     BL=BL+Ad
 
-    print(np.reshape(t.T, (nl,)))
     Q  = sp.csr_matrix((np.ones((nl,)), (np.arange(nl),np.reshape(t.T, (nl,)))));
 
     return (AL, BL, Q)
