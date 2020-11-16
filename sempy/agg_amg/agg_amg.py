@@ -14,5 +14,8 @@ B = R.dot(Bb.dot(R.T))
 x = R.dot(xb)
 y = R.dot(yb)
 
-print(x)
+#x = np.array([-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5])
+#y = np.array([0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
+
 J0 = get_J0(x, y)
+print(J0.T)
