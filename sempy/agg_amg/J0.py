@@ -1,26 +1,30 @@
+import numpy as np
+from sempy.agg_amg.rcb_cut import rcb_cut
+
 # indices = np.arange(1, n+1) ## 1..n
 # rcb_order = cut(x, y, indices)
-def cut(x, y, indices):
-    if n < 4:
-        return indices
-    else:
-        low, high = rcb_cut(x, y)
-        x_low, y_low, indices_low = x[low], y[low], indices[low]
-        x_high, y_high, indices_high = x[high], y[high], indices[high]
-        ind_low = cut(x_low, y_low, indices_low)
-        ind_high = cut(x_high, y_high, indices_high)
-        return np.concatenate(ind_low, ind_high)
+# def cut(x, y, indices):
+# if n < 4:
+# return indices
+# else:
+##        low, high = rcb_cut(x, y)
+##        x_low, y_low, indices_low = x[low], y[low], indices[low]
+##        x_high, y_high, indices_high = x[high], y[high], indices[high]
+##        ind_low = cut(x_low, y_low, indices_low)
+##        ind_high = cut(x_high, y_high, indices_high)
+# return np.concatenate(ind_low, ind_high)
 
 
 def get_J0(x, y):
-    n, _ = x.shape
-    log_n = np.ceil(np.log2(n))
+    n = x.shape[0]
+    log_n = int(np.ceil(np.log2(n)))
 
     ind_list = np.arange(0, n)
     ind_list_temp = np.zeros_like(ind_list)
 
     n_cuts, ja = 1, []
-    ja[0], ja[1] = 0, n
+    ja.append(0)
+    ja.append(n)
     for level in range(log_n-1):
         it, jt = 0, []
         jt.append(ja[it])

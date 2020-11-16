@@ -1,8 +1,10 @@
+import numpy as np
+
 def rcb_cut(x, y):
-    x_min = np.min(x)
-    x_max = np.max(x)
-    y_min = np.min(y)
-    y_max = np.max(y)
+    x_min = x.min()
+    x_max = x.max()
+    y_min = y.min()
+    y_max = y.max()
 
     x_len = x_max-x_min
     y_len = y_max-y_min
