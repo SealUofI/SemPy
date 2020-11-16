@@ -14,8 +14,12 @@ B = R.dot(Bb.dot(R.T))
 x = R.dot(xb)
 y = R.dot(yb)
 
-#x = np.array([-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5])
-#y = np.array([0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
-
 J0 = get_J0(x, y)
-print(J0.T)
+n, ncuts = J0.shape
+print("J0: {} x {}".format(n, ncuts))
+
+rr = np.multiply(x, x)+np.multiply(y, y)
+uex = 1.0 - rr
+f = 4*B.dot(np.ones(n,))
+print("norm rr: {}, uex: {}, f:{}".format(
+    np.linalg.norm(rr), np.linalg.norm(uex), np.linalg.norm(f)))

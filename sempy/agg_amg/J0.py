@@ -1,19 +1,6 @@
 import numpy as np
 from sempy.agg_amg.rcb_cut import rcb_cut
 
-# indices = np.arange(1, n+1) ## 1..n
-# rcb_order = cut(x, y, indices)
-# def cut(x, y, indices):
-# if n < 4:
-# return indices
-# else:
-##        low, high = rcb_cut(x, y)
-##        x_low, y_low, indices_low = x[low], y[low], indices[low]
-##        x_high, y_high, indices_high = x[high], y[high], indices[high]
-##        ind_low = cut(x_low, y_low, indices_low)
-##        ind_high = cut(x_high, y_high, indices_high)
-# return np.concatenate(ind_low, ind_high)
-
 
 def get_J0(x, y):
     n = x.shape[0]
