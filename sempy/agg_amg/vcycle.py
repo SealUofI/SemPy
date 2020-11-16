@@ -14,20 +14,20 @@ def vcycle(rhs, A, level, J0):
     n, _ = rhs.shape
 
     if n == 1:
-        u = 0
-        if abs(A) > sqrt(eps):
+        u = 0.0
+        if abs(A) > sqrt(np.finfo(float).eps):
             u = np.linalg.solve(A, rhs)
     else:
         nsmooth = 1
         sigma = sigma_cheb(1, nsmooth+1, 1.0, 2.0)
-        D = 1.0/diag(A)
+        D = 1.0/np.diag(A)
 
-        u = sigma*np.dot(D, r)
+        u = sigma*np.multiply(D, r)
         r = rhs-np.dot(A, u)
 
         for smooth in range(1, nsmooth+1):
             sigma = sigma_chb(smooth+1, nsmooth+1, 1.0, 2.0)
-            s = sigma*np.dot(D, r)
+            s = sigma*np.multiply(D, r)
             u = u+s
             r = r-np.dot(A, s)
 
@@ -49,7 +49,7 @@ def vcycle(rhs, A, level, J0):
         r = rhs-np.dot(A, u)
         for smooth in range(1):
             sigma = 0.66
-            s = sigma*np.dot(D, r)
+            s = sigma*np.multiply(D, r)
             u = u+s
             r = r-np.dot(A, s)
 
