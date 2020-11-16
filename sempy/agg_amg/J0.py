@@ -19,8 +19,8 @@ def get_J0(x, y):
     n = x.shape[0]
     log_n = int(np.ceil(np.log2(n)))
 
-    ind_list = np.arange(0, n)
-    ind_list_temp = np.zeros_like(ind_list)
+    ind_lst = np.arange(0, n)
+    ind_lst_tmp = np.zeros_like(ind_lst)
 
     n_cuts, ja = 1, []
     ja.append(0)
@@ -30,24 +30,24 @@ def get_J0(x, y):
         jt.append(ja[it])
         for i in range(n_cuts):
             j0, j1 = ja[i], ja[i+1]
-            ll = ind_list[j0:j1]
+            ll = ind_lst[j0:j1]
 
             xl, yl = x[ll], y[ll]
             low, high = rcb_cut(xl, yl)
-            low_n, _ = low.shape
+            low_n = low.shape[0]
 
             jt.append(j0+low_n)
             jt.append(j1)
             it = it + 2
-            ind_list_tmp[j0:j0+low_n] = ll[low]
-            ind_list_tmp[j0+low_n:j1] = ll[high]
+            ind_lst_tmp[j0:j0+low_n] = ll[low]
+            ind_lst_tmp[j0+low_n:j1] = ll[high]
         ja = jt
-        ind_list = ind_list_tmp
+        ind_lst = ind_lst_tmp
         n_cuts = n_cuts*2
 
     J0 = np.zeros((n, n_cuts))
     for j in range(n_cuts):
         i0, i1 = ja[j], ja[j+1]
         for i in range(i0, i1):
-            J0[ind_list[i], j] = 1
+            J0[ind_lst[i], j] = 1
     return J0

@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def rcb_cut(x, y):
     x_min = x.min()
     x_max = x.max()
@@ -18,8 +19,8 @@ def rcb_cut(x, y):
 def rcb_cut_graph(x):
     indices = np.argsort(x)
 
-    n = x.shape
-    n_high = np.ceil(n/2.0)
+    n = x.shape[0]
+    n_high = int(np.ceil(n/2.0))
     n_low = n-n_high
 
     return indices[0:n_low], indices[n_low:n]
