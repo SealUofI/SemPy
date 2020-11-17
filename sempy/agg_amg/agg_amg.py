@@ -45,6 +45,6 @@ print("norm rr: {}, Ar: {} uex: {}, f:{} {}".format(
     np.linalg.norm(rr), np.linalg.norm(A.dot(rr)), np.linalg.norm(uex), np.linalg.norm(f), f.shape))
 
 tol = 1e-8
-prec = 0
-u, res, n_iter = project(f, A.todense(), J0, tol, prec, verbose=1)
+prec = 1
+u, res, n_iter = project(f, A, J0, tol, prec, verbose=1)
 print("n_iter: {} norm x: {}".format(n_iter, np.linalg.norm(u)))

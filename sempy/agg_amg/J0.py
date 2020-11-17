@@ -1,4 +1,5 @@
 import numpy as np
+import scipy.sparse as sp
 from sempy.agg_amg.rcb_cut import rcb_cut
 
 
@@ -32,9 +33,17 @@ def get_J0(x, y):
         ind_lst = ind_lst_tmp
         n_cuts = n_cuts*2
 
+    cols = []
     J0 = np.zeros((n, n_cuts))
     for j in range(n_cuts):
         i0, i1 = ja[j], ja[j+1]
         for i in range(i0, i1):
+            cols.append(j)
             J0[ind_lst[i], j] = 1
+
+    n_vals = ja[n_cuts]
+    vals = np.ones((n_vals,))
+
+    J0 = sp.coo_matrix((vals, (ind_lst, cols)), shape=(n, n_cuts)).tocsr()
+
     return J0

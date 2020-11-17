@@ -6,7 +6,7 @@ import numpy as np
 def precond(r, A, J0, prec):
     n = A.shape[0]
     if prec == 0:
-        Di = 1.0/np.diag(A)
+        Di = 1.0/A.diagonal()
         Di = Di.reshape((n, 1))
         z = np.multiply(Di, r)
     elif prec == 1:
@@ -55,8 +55,6 @@ def project(r, A, J0, tol, prec, verbose=1):
             W[:, k] = scale*w
             P[:, k] = scale*p
 
-        if verbose > 0:
-            print("x.shape: {}".format(x.shape))
         x = x+alpha*p
         r = r-alpha*w
 
