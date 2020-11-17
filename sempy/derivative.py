@@ -1,34 +1,36 @@
 import numpy as np
 from sempy.quadrature import gauss_lobatto
 
+
 def lagrange_derivative_matrix(x):
-    assert x.ndim==1
+    assert x.ndim == 1
 
-    n=x.size
+    n = x.size
 
-    a=np.ones((n,),dtype=np.float64)
+    a = np.ones((n,), dtype=np.float64)
 
     for i in range(n):
         for j in range(i):
-            a[i]=a[i]*(x[i]-x[j])
-        for j in range(i+1,n):
-            a[i]=a[i]*(x[i]-x[j])
-    a=1.0/a
-    D=np.zeros((n,n))
+            a[i] = a[i]*(x[i]-x[j])
+        for j in range(i+1, n):
+            a[i] = a[i]*(x[i]-x[j])
+    a = 1.0/a
+    D = np.zeros((n, n))
 
     for i in range(n):
-        D[i,:]=a[i]*(x[i]-x)
-        D[i,i]=1
+        D[i, :] = a[i]*(x[i]-x)
+        D[i, i] = 1
     for j in range(n):
-        D[:,j]=D[:,j]/a[j]
-    D=1.0/D
+        D[:, j] = D[:, j]/a[j]
+    D = 1.0/D
 
     for i in range(n):
-        D[i,i]=0
-        D[i,i]=-sum(D[i,:])
+        D[i, i] = 0
+        D[i, i] = -sum(D[i, :])
     return D
 
+
 def reference_derivative_matrix(p):
-    z,w=gauss_lobatto(p)
-    D=lagrange_derivative_matrix(z)
+    z, w = gauss_lobatto(p)
+    D = lagrange_derivative_matrix(z)
     return D

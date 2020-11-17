@@ -1,3 +1,3 @@
 import numpy as np
 
-SEMPY_SCALAR=np.float64
+SEMPY_SCALAR = np.float64

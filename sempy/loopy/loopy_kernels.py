@@ -8,6 +8,7 @@ from loopy.kernel.data import AddressSpace
 
 from sempy.types import SEMPY_SCALAR
 
+
 def gen_zero_boundary_knl():
     knl = lp.make_kernel(
         """
@@ -20,13 +21,14 @@ def gen_zero_boundary_knl():
         default_offset=None,
         name="zero_boundary"
     )
-    
+
     return knl
+
 
 def python_gather_scatter(gatherIds, gatherStarts, maxIter, q_in):
     q_out = np.zeros_like(q_in)
     n = gatherStarts.shape[0]
-    for k in range(1,n):
+    for k in range(1, n):
         start = gatherStarts[k-1]
         diff = gatherStarts[k] - start
         gq = 0
@@ -37,6 +39,7 @@ def python_gather_scatter(gatherIds, gatherStarts, maxIter, q_in):
             if j < diff:
                 q_out[gatherIds[start + j]] = gq
     return q_out
+
 
 def gen_gather_scatter_knl():
     knl = lp.make_kernel(
@@ -68,6 +71,7 @@ def gen_gather_scatter_knl():
     )
     return knl
 
+
 def gen_CG_iteration():
     knl = lp.make_kernel(
         """
@@ -83,11 +87,11 @@ def gen_CG_iteration():
         rdotr = sum(k, r[k]*r[k]) {id=rdotr, dep=r}
         p_out[i] = r[i] + (rdotr/rdotr_prev) * p[i] {id=p, dep=rdotr}
         """,
-        #kernel_data = [
+        # kernel_data = [
         #    lp.GlobalArg("result", SEMPY_SCALAR, shape=(m), order="C"),
         #    lp.GlobalArg("A", SEMPY_SCALAR, shape=(m,n), order="C"),
         #    lp.GlobalArg("x", SEMPY_SCALAR, shape=(n,), order="C")
-        #],
+        # ],
         assumptions="n > 0",
         default_offset=None,
         name="cg"
@@ -99,6 +103,7 @@ def gen_CG_iteration():
     #knl = lp.duplicate_inames(knl, "i", within="id:r_old")
 
     return knl
+
 
 def gen_apply_geometric_factors_knl():
     knl = lp.make_kernel(
@@ -116,7 +121,6 @@ def gen_apply_geometric_factors_knl():
     return knl
 
 
-
 def gen_Ax_knl():
     knl = lp.make_kernel(
         """
@@ -125,11 +129,11 @@ def gen_Ax_knl():
         """
         result[i] = sum(j,A[i,j]*x[j])
         """,
-        #kernel_data = [
+        # kernel_data = [
         #    lp.GlobalArg("result", SEMPY_SCALAR, shape=(m), order="C"),
         #    lp.GlobalArg("A", SEMPY_SCALAR, shape=(m,n), order="C"),
         #    lp.GlobalArg("x", SEMPY_SCALAR, shape=(n,), order="C")
-        #],
+        # ],
         assumptions="n > 0 and m > 0",
         default_offset=None,
         name="Ax"
@@ -138,7 +142,7 @@ def gen_Ax_knl():
     return knl
 
 
-def gen_elliptic_Ax_knl(nElem,n):
+def gen_elliptic_Ax_knl(nElem, n):
     knl = lp.make_kernel(
         ["{[i,i0,ii,j,k,k0,kk,l]: 0<=i,i0,j,k,k0,l<n and 0<=ii, kk < nn}",
          "{[kkk, d0,d1]: 0<=kkk<nnn and 0<=d0,d1<3}",
@@ -160,15 +164,17 @@ def gen_elliptic_Ax_knl(nElem,n):
         result[e*nnn + i0t*nn + kkt] = result[e*nnn + i0t*nn + kkt] + sum(j,D[j,i0t]*W[2, j*nn + kkt]) {id=res2,dep=res1}           
         end
         """,
-        kernel_data = [
+        kernel_data=[
             lp.GlobalArg("U", SEMPY_SCALAR, shape=(nElem*n*n*n,), order="C"),
-            lp.GlobalArg("D", SEMPY_SCALAR, shape=(n,n), order="C"),
-            lp.GlobalArg("result", SEMPY_SCALAR, shape=(nElem*n*n*n,), order="C"),
-            lp.GlobalArg("g", SEMPY_SCALAR, shape=(nElem,3,3,n*n*n), order="C"), 
+            lp.GlobalArg("D", SEMPY_SCALAR, shape=(n, n), order="C"),
+            lp.GlobalArg("result", SEMPY_SCALAR,
+                         shape=(nElem*n*n*n,), order="C"),
+            lp.GlobalArg("g", SEMPY_SCALAR, shape=(
+                nElem, 3, 3, n*n*n), order="C"),
             # If fix params can remove these
             #lp.GlobalArg("Ur", SEMPY_SCALAR, shape=(3,n*n*n), order="C"),
             #lp.GlobalArg("W", SEMPY_SCALAR, shape=(3,n*n*n,), order="C"),
-            #lp.GlobalArg("pr", SEMPY_SCALAR, shape=(3,n*n*n), order="C"), 
+            #lp.GlobalArg("pr", SEMPY_SCALAR, shape=(3,n*n*n), order="C"),
             #lp.ValueArg("n", np.int32),
             #lp.ValueArg("nElem", np.int32),
         ],
@@ -192,18 +198,18 @@ def gen_mxm_knl():
         """
         result[i,k] = sum(j,A[i,j]*X[j,k])
         """,
-        #kernel_data = [
+        # kernel_data = [
         #    lp.GlobalArg("result", SEMPY_SCALAR, shape=(m), order="C"),
         #    lp.GlobalArg("A", SEMPY_SCALAR, shape=(m,n), order="C"),
         #    lp.GlobalArg("x", SEMPY_SCALAR, shape=(n,), order="C")
-        #],
+        # ],
         assumptions="n > 0 and m > 0 and o > 0",
         default_offset=None,
         name="mxm"
     )
 
     return knl
-    
+
 
 def gen_tensor_product_2dx3d_knl():
     knl = lp.make_kernel(
@@ -213,18 +219,19 @@ def gen_tensor_product_2dx3d_knl():
         """
         result[l,i,k] = sum(j,A2d[i,j]*X3d[l,j,k])
         """,
-        #kernel_data = [
+        # kernel_data = [
         #    lp.GlobalArg("result", SEMPY_SCALAR, shape=(m), order="C"),
         #    lp.GlobalArg("A", SEMPY_SCALAR, shape=(m,n), order="C"),
         #    lp.GlobalArg("x", SEMPY_SCALAR, shape=(n,), order="C")
-        #],
+        # ],
         assumptions="n > 0",
         default_offset=None,
         name="tensor_product_2dx3d"
     )
 
     return knl
-   
+
+
 def gen_triple_vector_sum_knl():
     knl = lp.make_kernel(
         """
@@ -240,6 +247,7 @@ def gen_triple_vector_sum_knl():
 
     return knl
 
+
 def gen_norm_knl():
     knl = lp.make_kernel(
         """
@@ -248,11 +256,11 @@ def gen_norm_knl():
         """
         result = sum(i,x[i]*x[i])
         """,
-        #kernel_data = [
+        # kernel_data = [
         #    lp.ValueArg("result", SEMPY_SCALAR),
         #    lp.GlobalArg("x", SEMPY_SCALAR, shape=(n,), order="C"),
         #    lp.GlobalArg("y", SEMPY_SCALAR, shape=(n,), order="C")
-        #],
+        # ],
         assumptions="n > 0",
         default_offset=None,
         name="norm"
@@ -269,17 +277,18 @@ def gen_inner_product_knl():
         """
         result = sum(i,x[i]*y[i])
         """,
-        #kernel_data = [
+        # kernel_data = [
         #    lp.ValueArg("result", SEMPY_SCALAR),
         #    lp.GlobalArg("x", SEMPY_SCALAR, shape=(n,), order="C"),
         #    lp.GlobalArg("y", SEMPY_SCALAR, shape=(n,), order="C")
-        #],
+        # ],
         assumptions="n > 0",
         default_offset=None,
         name="inner_product"
     )
 
     return knl
+
 
 def gen_weighted_inner_product_knl():
     knl = lp.make_kernel(
@@ -289,17 +298,18 @@ def gen_weighted_inner_product_knl():
         """
         result = sum(i,w[i]*x[i]*y[i])
         """,
-        #kernel_data = [
+        # kernel_data = [
         #    lp.ValueArg("result", SEMPY_SCALAR),
         #    lp.GlobalArg("x", SEMPY_SCALAR, shape=(n,), order="C"),
         #    lp.GlobalArg("y", SEMPY_SCALAR, shape=(n,), order="C")
-        #],
+        # ],
         assumptions="n > 0",
         default_offset=None,
         name="weighted_inner_product"
     )
 
     return knl
+
 
 def gen_weighted_norm_knl():
     knl = lp.make_kernel(
@@ -309,17 +319,18 @@ def gen_weighted_norm_knl():
         """
         result = sum(i,w[i]*x[i]*x[i])
         """,
-        #kernel_data = [
+        # kernel_data = [
         #    lp.ValueArg("result", SEMPY_SCALAR),
         #    lp.GlobalArg("x", SEMPY_SCALAR, shape=(n,), order="C"),
         #    lp.GlobalArg("y", SEMPY_SCALAR, shape=(n,), order="C")
-        #],
+        # ],
         assumptions="n > 0",
         default_offset=None,
         name="weighted_norm"
     )
 
     return knl
+
 
 def gen_inplace_xpay_knl():
 
@@ -330,12 +341,12 @@ def gen_inplace_xpay_knl():
         """
         x[i] = x[i] + a*y[i]
         """,
-        #kernel_data = [
+        # kernel_data = [
         #    lp.GlobalArg("result", SEMPY_SCALAR, shape=(n,), order="C"),
         #    lp.ValueArg("a", SEMPY_SCALAR),
         #    lp.GlobalArg("x", SEMPY_SCALAR, shape=(n,), order="C"),
         #    lp.GlobalArg("y", SEMPY_SCALAR, shape=(n,), order="C")
-        #],
+        # ],
         assumptions="n > 0",
         default_offset=None,
         name="inplace_xpay"
@@ -344,6 +355,7 @@ def gen_inplace_xpay_knl():
     #knl = lp.tag_inames(knl, [("i", "g.0")])
 
     return knl
+
 
 def gen_inplace_axpy_knl():
 
@@ -354,12 +366,12 @@ def gen_inplace_axpy_knl():
         """
         x[i] = a*x[i] + y[i]
         """,
-        #kernel_data = [
+        # kernel_data = [
         #    lp.GlobalArg("result", SEMPY_SCALAR, shape=(n,), order="C"),
         #    lp.ValueArg("a", SEMPY_SCALAR),
         #    lp.GlobalArg("x", SEMPY_SCALAR, shape=(n,), order="C"),
         #    lp.GlobalArg("y", SEMPY_SCALAR, shape=(n,), order="C")
-        #],
+        # ],
         assumptions="n > 0",
         default_offset=None,
         name="inplace_axpy"
@@ -368,6 +380,7 @@ def gen_inplace_axpy_knl():
     #knl = lp.tag_inames(knl, [("i", "g.0")])
 
     return knl
+
 
 def gen_axpy_knl():
 
@@ -378,12 +391,12 @@ def gen_axpy_knl():
         """
         result[i] = a*x[i] + y[i]
         """,
-        #kernel_data = [
+        # kernel_data = [
         #    lp.GlobalArg("result", SEMPY_SCALAR, shape=(n,), order="C"),
         #    lp.ValueArg("a", SEMPY_SCALAR),
         #    lp.GlobalArg("x", SEMPY_SCALAR, shape=(n,), order="C"),
         #    lp.GlobalArg("y", SEMPY_SCALAR, shape=(n,), order="C")
-        #],
+        # ],
         assumptions="n > 0",
         default_offset=None,
         name="axpy"
@@ -392,6 +405,7 @@ def gen_axpy_knl():
     #knl = lp.tag_inames(knl, [("i", "g.0")])
 
     return knl
+
 
 if __name__ == "__main__":
     # setup
@@ -404,7 +418,7 @@ if __name__ == "__main__":
 
     # Add to path so can import from above directory
     #import sys
-    #sys.path.append('../')
+    # sys.path.append('../')
     SEMPY_SCALAR = np.float64
 
     platform = cl.get_platforms()
@@ -414,17 +428,17 @@ if __name__ == "__main__":
     queue = cl.CommandQueue(ctx)
 
     n = np.int32(10)
-    nElem=np.int32(10)
-    Ax = gen_elliptic_Ax_knl(nElem,n)
+    nElem = np.int32(10)
+    Ax = gen_elliptic_Ax_knl(nElem, n)
     print(Ax)
-    Ax= lp.set_options(Ax, "write_code")
+    Ax = lp.set_options(Ax, "write_code")
     U = np.random.rand(nElem*n*n*n)
-    D = np.random.rand(n,n)
-    g = np.random.rand(nElem,3,3,n*n*n)
+    D = np.random.rand(n, n)
+    g = np.random.rand(nElem, 3, 3, n*n*n)
     evt, (result) = Ax(queue, D=D, U=U, g=g)
-    #print(pr)
-    #print(W)
-    #print(Ur)
+    # print(pr)
+    # print(W)
+    # print(Ur)
     print(result)
     """
     g_app = gen_apply_geometric_factors_knl()
