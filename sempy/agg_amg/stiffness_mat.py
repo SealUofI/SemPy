@@ -249,10 +249,3 @@ def stiffness_mat(p, t):
     #    print()
 
     return (AL, BL, Q, R, xb, yb, p, t)
-
-
-if __name__ == "__main__":
-    pts = np.loadtxt("pts.dat")
-    tri = np.loadtxt("tri.dat", dtype=np.int32) - 1
-
-    stiffness_mat(pts, tri)

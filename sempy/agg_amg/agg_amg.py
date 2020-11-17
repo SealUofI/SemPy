@@ -6,7 +6,6 @@ import numpy as np
 import scipy.sparse.linalg as sla
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-import matplotlib.tri as mtri
 
 np.set_printoptions(threshold=np.inf)
 
@@ -48,9 +47,11 @@ plt.legend(loc=0)
 plt.savefig('residual_vs_iter.pdf', bbox_inches='tight')
 plt.close()
 
+ub = (R.T).dot(u)
+ub = ub[:,0]
+
+my_cmap = plt.get_cmap('hot')
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
-print("pts: {} tri: {}".format(pts.shape, tri.shape))
-#triangles = mtri.Triangulation(pts[:, 0], pts[:, 1], tri)
-#ax.plot_trisurf(triangles, u.ravel())
-#plt.savefig('solution.pdf', bbox_inches='tight')
+ax.plot_trisurf(pts[:, 0], pts[:, 1], ub, cmap=my_cmap)
+plt.savefig('solution.pdf', bbox_inches='tight')
