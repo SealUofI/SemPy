@@ -46,7 +46,7 @@ def vcycle(rhs, A, level, J0, verbose=0):
             n_half = n/2
             I = sp.eye(n_half)
             e2 = np.ones((2, 1))
-            J = sp.kron(I, e2)
+            J = sp.kron(I, e2, format="csr")
 
         if verbose > 1:
             print("level: {} J: {}".format(level, J.shape))
