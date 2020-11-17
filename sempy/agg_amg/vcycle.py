@@ -11,7 +11,7 @@ def sigma_cheb(k, n, lmin, lmax):
     return sigma
 
 
-def vcycle(rhs, A, level, J0, verbose=1):
+def vcycle(rhs, A, level, J0, verbose=0):
     n = rhs.shape[0]
     rhs = rhs.reshape((n, 1))
     if verbose > 0:

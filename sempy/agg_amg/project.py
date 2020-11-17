@@ -21,7 +21,7 @@ def precond(r, A, J0, prec):
     return z.reshape((n, 1))
 
 
-def project(r, A, J0, tol, prec, verbose=1):
+def project(r, A, J0, tol, prec, verbose=0):
     n_iter, max_iter = 0, 100
 
     if tol < 0:

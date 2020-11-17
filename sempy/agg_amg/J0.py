@@ -14,8 +14,8 @@ def get_J0(x, y):
     ja.append(0)
     ja.append(n)
     for level in range(log_n-1):
-        it, jt = 0, []
-        jt.append(ja[it])
+        jt = []
+        jt.append(ja[0])
         for i in range(n_cuts):
             j0, j1 = ja[i], ja[i+1]
             ll = ind_lst[j0:j1]
@@ -26,7 +26,6 @@ def get_J0(x, y):
 
             jt.append(j0+low_n)
             jt.append(j1)
-            it = it + 2
             ind_lst_tmp[j0:j0+low_n] = ll[low]
             ind_lst_tmp[j0+low_n:j1] = ll[high]
         ja = jt
@@ -34,12 +33,10 @@ def get_J0(x, y):
         n_cuts = n_cuts*2
 
     cols = []
-    J0 = np.zeros((n, n_cuts))
     for j in range(n_cuts):
         i0, i1 = ja[j], ja[j+1]
         for i in range(i0, i1):
             cols.append(j)
-            J0[ind_lst[i], j] = 1
 
     n_vals = ja[n_cuts]
     vals = np.ones((n_vals,))
