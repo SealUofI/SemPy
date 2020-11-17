@@ -4,6 +4,9 @@ from sempy.agg_amg.project import project
 
 import numpy as np
 import scipy.sparse.linalg as sla
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.tri as mtri
 
 np.set_printoptions(threshold=np.inf)
 
@@ -21,18 +24,33 @@ y = R.dot(yb)
 
 J0 = get_J0(x, y)
 n, ncuts = J0.shape
-print("J0: {} x {}, {}".format(n, ncuts, sla.norm(J0)))
 
-rr = x**2 + y**2  # np.multiply(x, x)+np.multiply(y, y)
+rr = x**2 + y**2
 uex = 1.0 - rr
 f = 4*B.dot(np.ones((n, 1)))
 
-JTrr = (J0.T).dot(rr)
-Arr = A.dot(rr)
-print("rr: {} f: {} A.dot(rr): {} (J^T).dot(rr): {}".format(np.linalg.norm(
-    rr), np.linalg.norm(f), np.linalg.norm(Arr), np.linalg.norm(JTrr)))
-
 tol = 1e-8
-prec = 1  # V-cycle, prec = 0 for Jacobi
+prec = 0  # Jacobi
 u, res, n_iter = project(f, A, J0, tol, prec, verbose=0)
-print("n_iter: {} norm u: {}".format(n_iter, np.linalg.norm(u)))
+
+prec = 1  # V-cycle
+u_mg, res_mg, n_iter_mg = project(f, A, J0, tol, prec, verbose=0)
+
+itr = np.arange(0, n_iter+1)
+itr_mg = np.arange(0, n_iter_mg+1)
+
+plt.figure()
+plt.title("Jacobi vs MG V-cycle on a disk, n={}".format(n))
+plt.plot(itr, res, '-x', label='Jacobi')
+plt.plot(itr_mg, res_mg, '-x', label='MG')
+plt.yscale('log')
+plt.legend(loc=0)
+plt.savefig('residual_vs_iter.pdf', bbox_inches='tight')
+plt.close()
+
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+print("pts: {} tri: {}".format(pts.shape, tri.shape))
+#triangles = mtri.Triangulation(pts[:, 0], pts[:, 1], tri)
+#ax.plot_trisurf(triangles, u.ravel())
+#plt.savefig('solution.pdf', bbox_inches='tight')

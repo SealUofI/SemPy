@@ -89,4 +89,4 @@ def project(r, A, J0, tol, prec, verbose=0):
             p = p-np.dot(P[:, 0:k+1], a)
         if verbose > 0:
             print("iter: {} norm: {}".format(k, np.linalg.norm(p)))
-    return x, res, k
+    return x, res, k+1
