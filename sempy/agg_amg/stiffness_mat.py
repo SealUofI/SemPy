@@ -1,7 +1,7 @@
 import numpy as np
 import scipy.sparse as sp
-np.set_printoptions(threshold=np.inf)
-
+import matplotlib.pyplot as plt
+#np.set_printoptions(threshold=np.inf)
 
 def get_maskl(t):
     E = t.shape[0]
@@ -30,9 +30,7 @@ def get_maskl(t):
             flag[k+1] = flag[k+1]+1
 
     # Numpy bug, same vector can't be on both sides
-    temp_flag = np.zeros_like(flag)
-    temp_flag[ind] = flag
-    flag = temp_flag
+    flag[ind] = flag.copy()
     flag = np.reshape(flag, (3, E), order="F")
 
     # Zero out local mask entries for any isolated edge
@@ -186,14 +184,6 @@ def fem_mat(p, t):
     Q = sp.csr_matrix(
         (np.ones((nl,)), (np.arange(nl), np.reshape(t.T, (nl,), order="F"))))
 
-    #rows, cols = np.nonzero(Q.T)
-    #print(np.linalg.norm(np.cumsum(rows + 1)))
-    #print(np.linalg.norm(np.cumsum(cols + 1)))
-
-    #v = Q.dot(np.arange(Q.shape[1]) + 1)
-    # print(np.linalg.norm(np.cumsum(v)))
-    # exit()
-
     return (AL, BL, Q)
 
 
@@ -231,21 +221,23 @@ def stiffness_mat(p, t):
     ir = temp_ir
     #ind = np.lexsort((ir,));
     ind = np.argsort(ir)
-    #i_s = ir[ind];
+    #i_s = ir[ind; # Not used
     ind = ind[:n]
 
     P = sp.eye(nb).tocsr()
     P = P[:, ind]
     R = P.T
 
-    #n = nb-gbdry.shape[0]
 
-    # Plotting code not implemented
-
-    # for A in (AL, BL, Q, R):
-    #    print(A.shape)
-    #    #print(np.any(np.isnan(A)))
-    #    print(np.linalg.norm(A))
-    #    print()
+    ### Plot a function that is 1 in the interior, 0 on the boundary
+    f = np.ones((n,),dtype=np.int32) ## 1 in Interior
+    fb = R.T.dot(f)                  ## Extend by 0 to the boundary
+    plt.figure()
+    ax = plt.axes(projection='3d')
+    ax.plot_trisurf(p[:,0], p[:,1], fb, triangles=t)
+    ax.plot(p[gbdry,0], p[gbdry,1],  "ro")
+    plt.show(block=False)
+    plt.pause(1)
+    plt.close()
 
     return (AL, BL, Q, R, xb, yb, p, t)

@@ -7,7 +7,7 @@ def precond(r, A, J0, prec):
     n = A.shape[0]
     if prec == 0:
         Di = 1.0/A.diagonal()
-        Di = Di.reshape((n, 1))
+        Di = Di.reshape((n,))
         z = np.multiply(Di, r)
     elif prec == 1:
         z = vcycle(r, A, 0, J0)
@@ -18,7 +18,7 @@ def precond(r, A, J0, prec):
     else:
         z = r.copy()
 
-    return z.reshape((n, 1))
+    return z.reshape((n,))
 
 
 def project(r, A, J0, tol, prec, verbose=0):
@@ -31,7 +31,7 @@ def project(r, A, J0, tol, prec, verbose=0):
     n = r.shape[0]
 
     z = precond(r, A, J0, prec)
-    rz1 = np.dot(r.T, z)[0, 0]
+    rz1 = np.dot(r, z)
     if verbose > 0:
         print("z: {} r: {} rz1: {}".format(
             np.linalg.norm(z), np.linalg.norm(r), rz1))
@@ -50,7 +50,7 @@ def project(r, A, J0, tol, prec, verbose=0):
 
     for k in range(max_iter):
         w = A.dot(p)
-        pAp = np.dot(p.T, w)[0, 0]
+        pAp = np.dot(p, w)
         alpha = rz1/pAp
 
         if prec > 0:
@@ -74,8 +74,8 @@ def project(r, A, J0, tol, prec, verbose=0):
         dz = z-zo
 
         rz0 = rz1
-        rz1 = np.dot(r.T, z)[0, 0]
-        rz2 = np.dot(r.T, dz)[0, 0]
+        rz1 = np.dot(r, z)
+        rz2 = np.dot(r, dz)
         beta = rz2/rz0
         if verbose > 0:
             print("iter: {} beta: {}".format(k, beta))
