@@ -152,12 +152,12 @@ def fem_mat(p, t):
     d0[0, :] = A1[0, 0, :]
     d0[1, :] = A1[1, 1, :]
     d0[2, :] = A1[2, 2, :]
-    d0 = np.reshape(d0, (nl,),order="F")
+    d0 = np.reshape(d0, (nl,), order="F")
     d1[0, :] = A1[1, 0, :]
     d1[1, :] = A1[2, 1, :]
-    d1 = np.reshape(d1, (nl,),order="F")
+    d1 = np.reshape(d1, (nl,), order="F")
     d2[0, :] = A1[2, 0, :]
-    d2 = np.reshape(d2, (nl,),order="F")
+    d2 = np.reshape(d2, (nl,), order="F")
 
     AL = sp.diags((d2, d1), offsets=(-2, -1), shape=(nl, nl))
     AL = AL+AL.T
@@ -171,12 +171,12 @@ def fem_mat(p, t):
     d0[0, :] = B1[0, 0, :]
     d0[1, :] = B1[1, 1, :]
     d0[2, :] = B1[2, 2, :]
-    d0 = np.reshape(d0, (nl,),order="F")
+    d0 = np.reshape(d0, (nl,), order="F")
     d1[0, :] = B1[1, 0, :]
     d1[1, :] = B1[2, 1, :]
-    d1 = np.reshape(d1, (nl,),order="F")
+    d1 = np.reshape(d1, (nl,), order="F")
     d2[0, :] = B1[2, 0, :]
-    d2 = np.reshape(d2, (nl,),order="F")
+    d2 = np.reshape(d2, (nl,), order="F")
 
     BL = sp.diags([d2, d1], offsets=(-2, -1), shape=(nl, nl))
     BL = BL+BL.T
@@ -185,14 +185,14 @@ def fem_mat(p, t):
 
     Q = sp.csr_matrix(
         (np.ones((nl,)), (np.arange(nl), np.reshape(t.T, (nl,), order="F"))))
-    
+
     #rows, cols = np.nonzero(Q.T)
     #print(np.linalg.norm(np.cumsum(rows + 1)))
     #print(np.linalg.norm(np.cumsum(cols + 1)))
 
     #v = Q.dot(np.arange(Q.shape[1]) + 1)
-    #print(np.linalg.norm(np.cumsum(v)))
-    #exit()
+    # print(np.linalg.norm(np.cumsum(v)))
+    # exit()
 
     return (AL, BL, Q)
 

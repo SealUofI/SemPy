@@ -9,7 +9,6 @@ def precond(r, A, J0, prec):
         Di = 1.0/np.diag(A)
         Di = Di.reshape((n, 1))
         z = np.multiply(Di, r)
-        z = r.copy()
     elif prec == 1:
         z = vcycle(r, A, 0, J0)
     elif prec == 2:
