@@ -30,7 +30,7 @@ def get_J0(x, y):
             ind_lst_tmp[j0:j0+low_n] = ll[low]
             ind_lst_tmp[j0+low_n:j1] = ll[high]
         ja = jt
-        ind_lst = ind_lst_tmp
+        ind_lst = ind_lst_tmp.copy()
         n_cuts = n_cuts*2
 
     cols = []

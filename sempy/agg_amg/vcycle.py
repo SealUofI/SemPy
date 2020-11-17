@@ -15,10 +15,12 @@ def vcycle(rhs, A, level, J0, verbose=1):
     n = rhs.shape[0]
     rhs = rhs.reshape((n, 1))
     if verbose > 0:
-        print("level: {} rhs: {}".format(level, rhs.shape))
+        print("level: {} rhs: {}".format(level, np.linalg.norm(rhs)))
 
-    if n == 2:
+    if n == 1:
+        u = 0.0
         u = sla.spsolve(A, rhs)
+        u = u.reshape((1, 1))
     else:
         nsmooth = 1
         sigma = sigma_cheb(1, nsmooth+1, 1.0, 2.0)
@@ -26,16 +28,17 @@ def vcycle(rhs, A, level, J0, verbose=1):
         D = D.reshape((n, 1))
 
         u = sigma*np.multiply(D, rhs)
-        if verbose > 0:
-            print("level: {} u: {}".format(level, u.shape))
-
         r = rhs-A.dot(u)
+        if verbose > 0:
+            print("level: {} r: {}".format(level, np.linalg.norm(r)))
 
         for smooth in range(1, nsmooth+1):
             sigma = sigma_cheb(smooth+1, nsmooth+1, 1.0, 2.0)
             s = sigma*np.multiply(D, r)
             u = u+s
             r = r-A.dot(s)
+        if verbose > 0:
+            print("level: {} r: {}".format(level, np.linalg.norm(r)))
 
         if level == 0:
             J = J0.copy()
@@ -45,19 +48,22 @@ def vcycle(rhs, A, level, J0, verbose=1):
             e2 = np.ones((2, 1))
             J = sp.kron(I, e2)
 
-        if verbose > 0:
+        if verbose > 1:
             print("level: {} J: {}".format(level, J.shape))
 
         r = (J.T).dot(r)
         Ar = (J.T).dot(A.dot(J))
 
         if verbose > 0:
-            print("level: {} Ar: {}, r: {}".format(level, Ar.shape, r.shape))
+            print("level: {} r: {}".format(level, np.linalg.norm(r)))
 
         e = vcycle(r, Ar, level+1, J)
 
         over = 1.4
         u = u+over*J.dot(e)
+
+        if verbose > 1:
+            print("level: {} e: {}, u: {}".format(level, e.shape, u.shape))
 
         r = rhs-A.dot(u)
         for smooth in range(1):

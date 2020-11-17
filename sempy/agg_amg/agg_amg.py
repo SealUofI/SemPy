@@ -3,6 +3,8 @@ from sempy.agg_amg.stiffness_mat import stiffness_mat
 from sempy.agg_amg.project import project
 
 import numpy as np
+import scipy.sparse.linalg as sla
+
 np.set_printoptions(threshold=np.inf)
 
 pts = np.loadtxt("pts.dat")
@@ -33,12 +35,14 @@ y = R.dot(yb)
 
 J0 = get_J0(x, y)
 n, ncuts = J0.shape
-print("J0: {} x {}".format(n, ncuts))
+print("J0: {} x {}, {}".format(n, ncuts, sla.norm(J0)))
+#print("J0: {} x {}, {}".format(n, ncuts, np.linalg.norm(J0)))
 
 rr = x**2 + y**2  # np.multiply(x, x)+np.multiply(y, y)
-#Arr = A.dot(rr)
-# print(np.linalg.norm(np.cumsum(Arr)))
-# exit()
+Arr = (J0.T).dot(rr)
+print("rr: {} (J.T).dot(rr): {}".format(
+    np.linalg.norm(rr), np.linalg.norm(Arr)))
+
 uex = 1.0 - rr
 f = 4*B.dot(np.ones((n, 1)))
 print("norm rr: {}, Ar: {} uex: {}, f:{} {}".format(

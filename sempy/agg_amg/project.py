@@ -22,7 +22,7 @@ def precond(r, A, J0, prec):
 
 
 def project(r, A, J0, tol, prec, verbose=1):
-    n_iter, max_iter = 0, 1000
+    n_iter, max_iter = 0, 100
 
     if tol < 0:
         max_iter = abs(tol)
@@ -32,6 +32,9 @@ def project(r, A, J0, tol, prec, verbose=1):
 
     z = precond(r, A, J0, prec)
     rz1 = np.dot(r.T, z)[0, 0]
+    if verbose > 0:
+        print("z: {} r: {} rz1: {}".format(
+            np.linalg.norm(z), np.linalg.norm(r), rz1))
 
     x = np.zeros_like(r)
     p = z.copy()
@@ -52,14 +55,16 @@ def project(r, A, J0, tol, prec, verbose=1):
 
         if prec > 0:
             scale = 1./np.sqrt(pAp)
-            W[:, k] = scale*w
-            P[:, k] = scale*p
+            W[:, k] = scale*w.reshape((n,))
+            P[:, k] = scale*p.reshape((n,))
 
         x = x+alpha*p
         r = r-alpha*w
 
         ek = np.linalg.norm(r)
         res.append(ek)
+        if verbose > 0:
+            print("iter: {} ek: {} alpha: {}".format(k, ek, alpha))
 
         if ek < tol:
             break
@@ -72,10 +77,16 @@ def project(r, A, J0, tol, prec, verbose=1):
         rz1 = np.dot(r.T, z)[0, 0]
         rz2 = np.dot(r.T, dz)[0, 0]
         beta = rz2/rz0
+        if verbose > 0:
+            print("iter: {} beta: {}".format(k, beta))
 
         p = z+beta*p
+        if verbose > 0:
+            print("iter: {} norm: {}".format(k, np.linalg.norm(p)))
 
         if prec > 0:
-            a = np.dot(W[:, 0:k].T, p)
-            p = p-np.dot(P[:, 0:k], a)
+            a = np.dot(W[:, 0:k+1].T, p)
+            p = p-np.dot(P[:, 0:k+1], a)
+        if verbose > 0:
+            print("iter: {} norm: {}".format(k, np.linalg.norm(p)))
     return x, res, k
