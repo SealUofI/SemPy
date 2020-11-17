@@ -185,8 +185,10 @@ def fem_mat(p, t):
 
     Q = sp.csr_matrix(
         (np.ones((nl,)), (np.arange(nl), np.reshape(t.T, (nl,), order="F"))))
-    print(Q)
-    exit()
+    
+    #rows, cols = np.nonzero(Q.T)
+    #print(np.linalg.norm(np.cumsum(rows + 1)))
+    #print(np.linalg.norm(np.cumsum(cols + 1)))
 
     #v = Q.dot(np.arange(Q.shape[1]) + 1)
     #print(np.linalg.norm(np.cumsum(v)))
