@@ -19,7 +19,7 @@ def gen_zero_boundary_knl():
         """,
         assumptions="n > 0",
         default_offset=None,
-        name="zero_boundary"
+        name="zero_boundary",
     )
 
     return knl
@@ -29,7 +29,7 @@ def python_gather_scatter(gatherIds, gatherStarts, maxIter, q_in):
     q_out = np.zeros_like(q_in)
     n = gatherStarts.shape[0]
     for k in range(1, n):
-        start = gatherStarts[k-1]
+        start = gatherStarts[k - 1]
         diff = gatherStarts[k] - start
         gq = 0
         for i in range(maxIter):
@@ -67,7 +67,7 @@ def gen_gather_scatter_knl():
         """,
         assumptions="max_iter > 0 and n > 1",
         default_offset=None,
-        name="gather_scatter"
+        name="gather_scatter",
     )
     return knl
 
@@ -94,13 +94,13 @@ def gen_CG_iteration():
         # ],
         assumptions="n > 0",
         default_offset=None,
-        name="cg"
+        name="cg",
     )
 
     knl = lp.make_reduction_inames_unique(knl)
-    #knl = lp.duplicate_inames(knl, "i", within="id:b0*")
-    #knl = lp.duplicate_inames(knl, "i", within="id:r")
-    #knl = lp.duplicate_inames(knl, "i", within="id:r_old")
+    # knl = lp.duplicate_inames(knl, "i", within="id:b0*")
+    # knl = lp.duplicate_inames(knl, "i", within="id:r")
+    # knl = lp.duplicate_inames(knl, "i", within="id:r_old")
 
     return knl
 
@@ -115,7 +115,7 @@ def gen_apply_geometric_factors_knl():
         """,
         assumptions="n > 0",
         default_offset=None,
-        name="geo_factors_apply"
+        name="geo_factors_apply",
     )
 
     return knl
@@ -136,7 +136,7 @@ def gen_Ax_knl():
         # ],
         assumptions="n > 0 and m > 0",
         default_offset=None,
-        name="Ax"
+        name="Ax",
     )
 
     return knl
@@ -144,10 +144,12 @@ def gen_Ax_knl():
 
 def gen_elliptic_Ax_knl(nElem, n):
     knl = lp.make_kernel(
-        ["{[i,i0,ii,j,k,k0,kk,l]: 0<=i,i0,j,k,k0,l<n and 0<=ii, kk < nn}",
-         "{[kkk, d0,d1]: 0<=kkk<nnn and 0<=d0,d1<3}",
-         "{[it,i0t,iit,kt,k0t,kkt,lt]: 0<=it,i0t,kt,k0t,lt<n and 0<=iit, kkt < nn}",
-         "{[e]: 0<=e<nElem}"],
+        [
+            "{[i,i0,ii,j,k,k0,kk,l]: 0<=i,i0,j,k,k0,l<n and 0<=ii, kk < nn}",
+            "{[kkk, d0,d1]: 0<=kkk<nnn and 0<=d0,d1<3}",
+            "{[it,i0t,iit,kt,k0t,kkt,lt]: 0<=it,i0t,kt,k0t,lt<n and 0<=iit, kkt < nn}",
+            "{[e]: 0<=e<nElem}",
+        ],
         """
         #<> nn = n*n
         #<> nnn = nn*n
@@ -165,25 +167,23 @@ def gen_elliptic_Ax_knl(nElem, n):
         end
         """,
         kernel_data=[
-            lp.GlobalArg("U", SEMPY_SCALAR, shape=(nElem*n*n*n,), order="C"),
+            lp.GlobalArg("U", SEMPY_SCALAR, shape=(nElem * n * n * n,), order="C"),
             lp.GlobalArg("D", SEMPY_SCALAR, shape=(n, n), order="C"),
-            lp.GlobalArg("result", SEMPY_SCALAR,
-                         shape=(nElem*n*n*n,), order="C"),
-            lp.GlobalArg("g", SEMPY_SCALAR, shape=(
-                nElem, 3, 3, n*n*n), order="C"),
+            lp.GlobalArg("result", SEMPY_SCALAR, shape=(nElem * n * n * n,), order="C"),
+            lp.GlobalArg("g", SEMPY_SCALAR, shape=(nElem, 3, 3, n * n * n), order="C"),
             # If fix params can remove these
-            #lp.GlobalArg("Ur", SEMPY_SCALAR, shape=(3,n*n*n), order="C"),
-            #lp.GlobalArg("W", SEMPY_SCALAR, shape=(3,n*n*n,), order="C"),
-            #lp.GlobalArg("pr", SEMPY_SCALAR, shape=(3,n*n*n), order="C"),
-            #lp.ValueArg("n", np.int32),
-            #lp.ValueArg("nElem", np.int32),
+            # lp.GlobalArg("Ur", SEMPY_SCALAR, shape=(3,n*n*n), order="C"),
+            # lp.GlobalArg("W", SEMPY_SCALAR, shape=(3,n*n*n,), order="C"),
+            # lp.GlobalArg("pr", SEMPY_SCALAR, shape=(3,n*n*n), order="C"),
+            # lp.ValueArg("n", np.int32),
+            # lp.ValueArg("nElem", np.int32),
         ],
         assumptions="n > 0 and nn > 0",
         default_offset=None,
-        name="elliptic_Ax"
+        name="elliptic_Ax",
     )
     knl = lp.make_reduction_inames_unique(knl)
-    knl = lp.fix_parameters(knl, n=n, nElem=nElem, nn=n*n, nnn=n*n*n)
+    knl = lp.fix_parameters(knl, n=n, nElem=nElem, nn=n * n, nnn=n * n * n)
     knl = lp.set_temporary_scope(knl, "pr,W", "global")
     knl = lp.add_nosync(knl, "any", "res1", "res2", bidirectional=True)
 
@@ -205,7 +205,7 @@ def gen_mxm_knl():
         # ],
         assumptions="n > 0 and m > 0 and o > 0",
         default_offset=None,
-        name="mxm"
+        name="mxm",
     )
 
     return knl
@@ -226,7 +226,7 @@ def gen_tensor_product_2dx3d_knl():
         # ],
         assumptions="n > 0",
         default_offset=None,
-        name="tensor_product_2dx3d"
+        name="tensor_product_2dx3d",
     )
 
     return knl
@@ -242,7 +242,7 @@ def gen_triple_vector_sum_knl():
         """,
         assumptions="n > 0",
         default_offset=None,
-        name="triple_vector_sum"
+        name="triple_vector_sum",
     )
 
     return knl
@@ -263,7 +263,7 @@ def gen_norm_knl():
         # ],
         assumptions="n > 0",
         default_offset=None,
-        name="norm"
+        name="norm",
     )
 
     return knl
@@ -284,7 +284,7 @@ def gen_inner_product_knl():
         # ],
         assumptions="n > 0",
         default_offset=None,
-        name="inner_product"
+        name="inner_product",
     )
 
     return knl
@@ -305,7 +305,7 @@ def gen_weighted_inner_product_knl():
         # ],
         assumptions="n > 0",
         default_offset=None,
-        name="weighted_inner_product"
+        name="weighted_inner_product",
     )
 
     return knl
@@ -326,7 +326,7 @@ def gen_weighted_norm_knl():
         # ],
         assumptions="n > 0",
         default_offset=None,
-        name="weighted_norm"
+        name="weighted_norm",
     )
 
     return knl
@@ -349,10 +349,10 @@ def gen_inplace_xpay_knl():
         # ],
         assumptions="n > 0",
         default_offset=None,
-        name="inplace_xpay"
+        name="inplace_xpay",
     )
 
-    #knl = lp.tag_inames(knl, [("i", "g.0")])
+    # knl = lp.tag_inames(knl, [("i", "g.0")])
 
     return knl
 
@@ -374,10 +374,10 @@ def gen_inplace_axpy_knl():
         # ],
         assumptions="n > 0",
         default_offset=None,
-        name="inplace_axpy"
+        name="inplace_axpy",
     )
 
-    #knl = lp.tag_inames(knl, [("i", "g.0")])
+    # knl = lp.tag_inames(knl, [("i", "g.0")])
 
     return knl
 
@@ -399,10 +399,10 @@ def gen_axpy_knl():
         # ],
         assumptions="n > 0",
         default_offset=None,
-        name="axpy"
+        name="axpy",
     )
 
-    #knl = lp.tag_inames(knl, [("i", "g.0")])
+    # knl = lp.tag_inames(knl, [("i", "g.0")])
 
     return knl
 
@@ -412,18 +412,20 @@ if __name__ == "__main__":
     # -----
     lp.set_caching_enabled(False)
     from warnings import filterwarnings, catch_warnings
-    filterwarnings('error', category=lp.LoopyWarning)
+
+    filterwarnings("error", category=lp.LoopyWarning)
     import loopy.options
+
     loopy.options.ALLOW_TERMINAL_COLORS = False
 
     # Add to path so can import from above directory
-    #import sys
+    # import sys
     # sys.path.append('../')
     SEMPY_SCALAR = np.float64
 
     platform = cl.get_platforms()
     my_gpu_devices = platform[0].get_devices(device_type=cl.device_type.GPU)
-    #ctx = cl.Context(devices=my_gpu_devices)
+    # ctx = cl.Context(devices=my_gpu_devices)
     ctx = cl.create_some_context(interactive=True)
     queue = cl.CommandQueue(ctx)
 
@@ -432,9 +434,9 @@ if __name__ == "__main__":
     Ax = gen_elliptic_Ax_knl(nElem, n)
     print(Ax)
     Ax = lp.set_options(Ax, "write_code")
-    U = np.random.rand(nElem*n*n*n)
+    U = np.random.rand(nElem * n * n * n)
     D = np.random.rand(n, n)
-    g = np.random.rand(nElem, 3, 3, n*n*n)
+    g = np.random.rand(nElem, 3, 3, n * n * n)
     evt, (result) = Ax(queue, D=D, U=U, g=g)
     # print(pr)
     # print(W)

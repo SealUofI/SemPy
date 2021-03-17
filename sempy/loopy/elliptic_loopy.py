@@ -12,12 +12,13 @@ from loopy.kernel.data import AddressSpace
 
 # Add to path so can import from above directory
 import sys
-sys.path.append('../')
+
+sys.path.append("../")
 
 # setup
 # -----
 lp.set_caching_enabled(False)
-filterwarnings('error', category=lp.LoopyWarning)
+filterwarnings("error", category=lp.LoopyWarning)
 loopy.options.ALLOW_TERMINAL_COLORS = False
 
 
@@ -40,8 +41,8 @@ g_app = lpk.gen_apply_geometric_factors_knl()
 def gradient(queue, U, D):
 
     n = D.shape[0]
-    nn = n*n
-    nnn = nn*n
+    nn = n * n
+    nnn = nn * n
 
     evt, (Ur,) = mxm(queue, A=U.reshape(nn, n), X=D.transpose())
     evt, (Us,) = tp(queue, A2d=D, X3d=U.reshape(n, n, n))
@@ -52,8 +53,8 @@ def gradient(queue, U, D):
 def gradient_tranpose(queue, W, D):
 
     n = D.shape[0]
-    nn = n*n
-    nnn = nn*n
+    nn = n * n
+    nnn = nn * n
 
     evt, (Ur,) = mxm(queue, A=W[0, :].reshape(nn, n), X=D)
     evt, (Us,) = tp(queue, A2d=D.transpose(), X3d=W[1, :].reshape(n, n, n))
@@ -76,5 +77,5 @@ def elliptic_ax(queue, mesh, p, D):
         # This will probably break
         evt, (ap[e, :],) = gradient_transpose(queue, apx, D)
 
-    ap = ap.reshape(nelem*Np)
+    ap = ap.reshape(nelem * Np)
     return mesh.apply_mask(ap)

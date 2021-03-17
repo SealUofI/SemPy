@@ -11,7 +11,7 @@ def kron_2d(Sy, Sx, U):
     V = U.reshape((my, nx))
     U = np.dot(Sy, V)
 
-    return U.reshape((nx*ny,))
+    return U.reshape((nx * ny,))
 
 
 def kron(Sz, Sy, Sx, U):
@@ -19,7 +19,7 @@ def kron(Sz, Sy, Sx, U):
     ny, my = Sy.shape
     nz, mz = Sz.shape
 
-    U = U.reshape((my*mz, mx))
+    U = U.reshape((my * mz, mx))
     U = np.dot(U, Sx.T)
 
     U = U.reshape((mz, my, nx))
@@ -27,7 +27,7 @@ def kron(Sz, Sy, Sx, U):
     for i in range(mz):
         V[i, :, :] = np.dot(Sy, U[i, :, :])
 
-    V = V.reshape((mz, nx*ny))
+    V = V.reshape((mz, nx * ny))
     U = np.dot(Sz, V)
 
-    return U.reshape((nx*ny*nz,))
+    return U.reshape((nx * ny * nz,))

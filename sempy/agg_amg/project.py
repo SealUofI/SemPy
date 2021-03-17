@@ -6,13 +6,13 @@ import numpy as np
 def precond(r, A, J0, prec):
     n = A.shape[0]
     if prec == 0:
-        Di = 1.0/A.diagonal()
+        Di = 1.0 / A.diagonal()
         Di = Di.reshape((n,))
         z = np.multiply(Di, r)
     elif prec == 1:
         z = vcycle(r, A, 0, J0)
     elif prec == 2:
-        #z = kcycle(r, A, 0, J0)
+        # z = kcycle(r, A, 0, J0)
         print("K-cycle is not implemented yet.")
         exit()
     else:
@@ -33,8 +33,7 @@ def project(r, A, J0, tol, prec, verbose=0):
     z = precond(r, A, J0, prec)
     rz1 = np.dot(r, z)
     if verbose > 0:
-        print("z: {} r: {} rz1: {}".format(
-            np.linalg.norm(z), np.linalg.norm(r), rz1))
+        print("z: {} r: {} rz1: {}".format(np.linalg.norm(z), np.linalg.norm(r), rz1))
 
     x = np.zeros_like(r)
     p = z.copy()
@@ -51,15 +50,15 @@ def project(r, A, J0, tol, prec, verbose=0):
     for k in range(max_iter):
         w = A.dot(p)
         pAp = np.dot(p, w)
-        alpha = rz1/pAp
+        alpha = rz1 / pAp
 
         if prec > 0:
-            scale = 1./np.sqrt(pAp)
-            W[:, k] = scale*w.reshape((n,))
-            P[:, k] = scale*p.reshape((n,))
+            scale = 1.0 / np.sqrt(pAp)
+            W[:, k] = scale * w.reshape((n,))
+            P[:, k] = scale * p.reshape((n,))
 
-        x = x+alpha*p
-        r = r-alpha*w
+        x = x + alpha * p
+        r = r - alpha * w
 
         ek = np.linalg.norm(r)
         res.append(ek)
@@ -71,22 +70,22 @@ def project(r, A, J0, tol, prec, verbose=0):
 
         zo = z.copy()
         z = precond(r, A, J0, prec)
-        dz = z-zo
+        dz = z - zo
 
         rz0 = rz1
         rz1 = np.dot(r, z)
         rz2 = np.dot(r, dz)
-        beta = rz2/rz0
+        beta = rz2 / rz0
         if verbose > 0:
             print("iter: {} beta: {}".format(k, beta))
 
-        p = z+beta*p
+        p = z + beta * p
         if verbose > 0:
             print("iter: {} norm: {}".format(k, np.linalg.norm(p)))
 
         if prec > 0:
-            a = np.dot(W[:, 0:k+1].T, p)
-            p = p-np.dot(P[:, 0:k+1], a)
+            a = np.dot(W[:, 0 : k + 1].T, p)
+            p = p - np.dot(P[:, 0 : k + 1], a)
         if verbose > 0:
             print("iter: {} norm: {}".format(k, np.linalg.norm(p)))
-    return x, res, k+1
+    return x, res, k + 1

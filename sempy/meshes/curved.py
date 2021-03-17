@@ -12,16 +12,36 @@ def trapezoid(M):
     zm, wm = gauss_lobatto(M)
     J = lagrange(zm, zn)
 
-    x = np.array([-0.5, 0.5, -1.0/sqrt(2.0), 1.0/sqrt(2.0), -
-                  0.5, 0.5, -1.0/sqrt(2.0), 1.0/sqrt(2.0)])
-    y = np.array([0.5, 0.5, 1.0/sqrt(2.0), 1.0/sqrt(2.0),
-                  0.5, 0.5, 1.0/sqrt(2.0), 1.0/sqrt(2.0)])
+    x = np.array(
+        [
+            -0.5,
+            0.5,
+            -1.0 / sqrt(2.0),
+            1.0 / sqrt(2.0),
+            -0.5,
+            0.5,
+            -1.0 / sqrt(2.0),
+            1.0 / sqrt(2.0),
+        ]
+    )
+    y = np.array(
+        [
+            0.5,
+            0.5,
+            1.0 / sqrt(2.0),
+            1.0 / sqrt(2.0),
+            0.5,
+            0.5,
+            1.0 / sqrt(2.0),
+            1.0 / sqrt(2.0),
+        ]
+    )
     z = np.array([0.0, 0.0, 0.0, 0.0, 0.1, 0.1, 0.1, 0.1])
 
-    n = N+1
-    nn = n*n
-    m = M+1
-    mm = m*m
+    n = N + 1
+    nn = n * n
+    m = M + 1
+    mm = m * m
 
     x = x.reshape((nn, n))
     y = y.reshape((nn, n))
@@ -47,8 +67,9 @@ def trapezoid(M):
 
     for j in range(n):
         for i in range(m):
-            Y[j, i, :] = Y[j, i, :]+(Y[j, i, :]-Y[j, 0, :])*(X[j, i, 0]
-                                                             * X[j, i, 0]-np.multiply(X[j, i, :], X[j, i, :]))
+            Y[j, i, :] = Y[j, i, :] + (Y[j, i, :] - Y[j, 0, :]) * (
+                X[j, i, 0] * X[j, i, 0] - np.multiply(X[j, i, :], X[j, i, :])
+            )
 
     Jx = JJx.reshape((n, mm))
     Jy = JJy.reshape((n, mm))

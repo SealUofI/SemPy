@@ -12,18 +12,19 @@ from loopy.kernel.data import AddressSpace
 
 # Add to path so can import from above directory
 import sys
-sys.path.append('../')
+
+sys.path.append("../")
 
 # setup
 # -----
 lp.set_caching_enabled(False)
-filterwarnings('error', category=lp.LoopyWarning)
+filterwarnings("error", category=lp.LoopyWarning)
 loopy.options.ALLOW_TERMINAL_COLORS = False
 
 
 platform = cl.get_platforms()
 my_gpu_devices = platform[0].get_devices(device_type=cl.device_type.GPU)
-#ctx = cl.Context(devices=my_gpu_devices)
+# ctx = cl.Context(devices=my_gpu_devices)
 ctx = cl.create_some_context(interactive=True)
 queue = cl.CommandQueue(ctx)
 
@@ -40,7 +41,7 @@ def cg(A, b, tol=1e-12, maxit=100, verbose=0):
     cgi = lpk.gen_CG_iteration()
     vupdt = lpk.gen_inplace_xpay_knl()
     axpy = lpk.gen_inplace_axpy_knl()
-    #Ax = lp.set_options(Ax, "write_code")
+    # Ax = lp.set_options(Ax, "write_code")
     # print(lp.generate_code_v2(Ax).device_code())
 
     x = np.zeros((n,), dtype=SEMPY_SCALAR)
@@ -51,7 +52,7 @@ def cg(A, b, tol=1e-12, maxit=100, verbose=0):
     norm_b = np.dot(b, b)
     print(norm_b)
 
-    TOL = max(tol*tol*norm_b, tol*tol)
+    TOL = max(tol * tol * norm_b, tol * tol)
 
     r = b
 
@@ -60,8 +61,8 @@ def cg(A, b, tol=1e-12, maxit=100, verbose=0):
     niter = 0
 
     if verbose:
-        print('Initial rnorm={}'.format(rdotr))
-    if rdotr < 1.e-20:
+        print("Initial rnorm={}".format(rdotr))
+    if rdotr < 1.0e-20:
         return x, niter
 
     p = r
@@ -70,11 +71,11 @@ def cg(A, b, tol=1e-12, maxit=100, verbose=0):
     r_lp = cl.array.to_device(queue, r)  # r.copy()
     p_lp = r_lp.copy()
     A_lp = cl.array.to_device(queue, A)
-    #A_lp = A.copy()
+    # A_lp = A.copy()
     evt, (rdotr_lp,) = norm(queue, x=r_lp)
     rdotr_lp = rdotr_lp.get()
 
-    #rdotr_lp = rdotr
+    # rdotr_lp = rdotr
     # p_lp=p.copy()
 
     while niter < maxit and rdotr > TOL and rdotr_lp > TOL:
@@ -91,7 +92,7 @@ def cg(A, b, tol=1e-12, maxit=100, verbose=0):
         # p_lp=p; rdotr_lp = rdotr #Delete this line when finished
 
         evt, (Ap_lp,) = Ax(queue, A=A_lp, x=p_lp)
-        #evt, (p_lp,r_lp,rdotr_lp,x_lp) = cgi(queue, Ap=Ap_lp, p=p_lp, r=r_lp, rdotr_prev=rdotr_lp, x=x_lp)
+        # evt, (p_lp,r_lp,rdotr_lp,x_lp) = cgi(queue, Ap=Ap_lp, p=p_lp, r=r_lp, rdotr_prev=rdotr_lp, x=x_lp)
 
         # """
         evt, (pAp_lp,) = ip(queue, x=p_lp, y=Ap_lp)
@@ -102,7 +103,7 @@ def cg(A, b, tol=1e-12, maxit=100, verbose=0):
         rdotr_prev_lp = rdotr_lp  # Host operation
         evt, (rdotr_lp,) = norm(queue, x=r_lp)
         rdotr_lp = rdotr_lp.get()
-        evt, (p_lp,) = axpy(queue, a=(rdotr_lp/rdotr_prev_lp), x=p_lp, y=r_lp)
+        evt, (p_lp,) = axpy(queue, a=(rdotr_lp / rdotr_prev_lp), x=p_lp, y=r_lp)
         # """
 
         print("CL: {}".format(rdotr_lp))
@@ -128,7 +129,7 @@ def cg(A, b, tol=1e-12, maxit=100, verbose=0):
         print("Numpy: {}".format(rdotr))
         """
 
-    #print(np.linalg.norm(x - x_lp))
+    # print(np.linalg.norm(x - x_lp))
     return x, niter
 
 

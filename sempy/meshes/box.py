@@ -44,10 +44,10 @@ def box_ab_2d(a, b, M):
 
 def box(x, y, z, M):
     N = 1
-    n = N+1
-    nn = n*n
-    m = M+1
-    mm = m*m
+    n = N + 1
+    nn = n * n
+    m = M + 1
+    mm = m * m
 
     zn, wn = gauss_lobatto(N)
     zm, wm = gauss_lobatto(M)
@@ -88,8 +88,8 @@ def box(x, y, z, M):
 
 def box_2d(x, y, M):
     N = 1
-    n = N+1
-    m = M+1
+    n = N + 1
+    m = M + 1
 
     zn, wn = gauss_lobatto(N)
     zm, wm = gauss_lobatto(M)

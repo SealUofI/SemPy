@@ -9,10 +9,13 @@ from sempy.quadrature import gauss_lobatto
 from sempy.interpolation import lagrange
 from sempy.kron import kron, kron_2d
 
-from sempy.mass import reference_mass_matrix_3d,\
-    reference_mass_matrix_2d
-from sempy.gradient import gradient, gradient_2d,\
-    gradient_transpose, gradient_transpose_2d
+from sempy.mass import reference_mass_matrix_3d, reference_mass_matrix_2d
+from sempy.gradient import (
+    gradient,
+    gradient_2d,
+    gradient_transpose,
+    gradient_transpose_2d,
+)
 
 from gslib_wrapper import GS
 from gslib_wrapper import gs_double, gs_float, gs_long, gs_int
@@ -45,7 +48,7 @@ def compare_points(p1, p2):
 
 
 def get_distance(p1, p2):
-    return (p1.x-p2.x)**2+(p1.y-p2.y)**2+(p1.z-p2.z)**2
+    return (p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2 + (p1.z - p2.z) ** 2
 
 
 def compare_sequence_id(p1, p2):
@@ -110,9 +113,9 @@ class Mesh:
         meshin = meshio.read(fname)
 
         # element to vertex map
-        self.elem_to_vert_map = meshin.cells['hexahedron']
+        self.elem_to_vert_map = meshin.cells["hexahedron"]
         if len(self.elem_to_vert_map) == 0:  # 2D mesh
-            self.elem_to_vert_map = meshin.cells['quad']
+            self.elem_to_vert_map = meshin.cells["quad"]
         assert len(self.elem_to_vert_map) > 0
 
         # number of elements
@@ -127,11 +130,19 @@ class Mesh:
         self.ndim = len(meshin.points[0, :])
 
         # setup face data
-        self.num_faces = 2*self.ndim
-        self.nface_verts = self.ndim+1
+        self.num_faces = 2 * self.ndim
+        self.nface_verts = self.ndim + 1
         if self.ndim == 3:
-            self.face_to_vert_map = np.array([[0, 1, 5, 4], [1, 2, 6, 5],
-                                              [2, 3, 7, 6], [3, 0, 4, 7], [0, 1, 2, 3], [4, 5, 6, 7]])
+            self.face_to_vert_map = np.array(
+                [
+                    [0, 1, 5, 4],
+                    [1, 2, 6, 5],
+                    [2, 3, 7, 6],
+                    [3, 0, 4, 7],
+                    [0, 1, 2, 3],
+                    [4, 5, 6, 7],
+                ]
+            )
         else:  # 2D mesh
             raise Exception("2D not supported yet.")
 
@@ -142,22 +153,16 @@ class Mesh:
 
         for i in range(self.num_elements):
             for j in range(self.num_verts):
-                self.x.append(meshin.points[
-                    self.elem_to_vert_map[i, j], 0])
-                self.y.append(meshin.points[
-                    self.elem_to_vert_map[i, j], 1])
+                self.x.append(meshin.points[self.elem_to_vert_map[i, j], 0])
+                self.y.append(meshin.points[self.elem_to_vert_map[i, j], 1])
                 if self.ndim == 3:
-                    self.z.append(meshin.points[
-                        self.elem_to_vert_map[i, j], 2])
+                    self.z.append(meshin.points[self.elem_to_vert_map[i, j], 2])
                 else:
                     self.z.append(0)
 
-        self.x = np.array(self.x).reshape((self.get_num_elems(),
-                                           self.get_num_verts()))
-        self.y = np.array(self.y).reshape((self.get_num_elems(),
-                                           self.get_num_verts()))
-        self.z = np.array(self.z).reshape((self.get_num_elems(),
-                                           self.get_num_verts()))
+        self.x = np.array(self.x).reshape((self.get_num_elems(), self.get_num_verts()))
+        self.y = np.array(self.y).reshape((self.get_num_elems(), self.get_num_verts()))
+        self.z = np.array(self.z).reshape((self.get_num_elems(), self.get_num_verts()))
 
         # TODO: Read in boundary faces from mesh
 
@@ -187,8 +192,9 @@ class Mesh:
         nfaces = self.get_num_faces()
         nface_verts = self.get_num_face_verts()
         if debug:
-            print("elems/faces/face_verts: {}/{}/{}".format(
-                nelems, nfaces, nface_verts))
+            print(
+                "elems/faces/face_verts: {}/{}/{}".format(nelems, nfaces, nface_verts)
+            )
 
         face_to_vert_map = self.get_face_to_vert_map()
         elem_to_vert_map = self.get_elem_to_vert_map()
@@ -205,17 +211,22 @@ class Mesh:
 
         faces.sort(key=cmp_to_key(compare_verts))
 
-        for i in range(nelems*nfaces-1):
-            if not compare_verts(faces[i], faces[i+1]):
+        for i in range(nelems * nfaces - 1):
+            if not compare_verts(faces[i], faces[i + 1]):
                 if debug:
-                    print("faces {}/{} and {}/{} match.".format(
-                        faces[i].face_id, faces[i].elem_id,
-                        faces[i+1].face_id, faces[i+1].elem_id))
+                    print(
+                        "faces {}/{} and {}/{} match.".format(
+                            faces[i].face_id,
+                            faces[i].elem_id,
+                            faces[i + 1].face_id,
+                            faces[i + 1].elem_id,
+                        )
+                    )
 
-                faces[i].neighbor_elem_id = faces[i+1].elem_id
-                faces[i].neighbor_face_id = faces[i+1].face_id
-                faces[i+1].neighbor_elem_id = faces[i].elem_id
-                faces[i+1].neighbor_face_id = faces[i].face_id
+                faces[i].neighbor_elem_id = faces[i + 1].elem_id
+                faces[i].neighbor_face_id = faces[i + 1].face_id
+                faces[i + 1].neighbor_elem_id = faces[i].elem_id
+                faces[i + 1].neighbor_face_id = faces[i].face_id
         faces = sorted(faces, key=cmp_to_key(compare_faces))
 
         self.elem_to_elem_map = []
@@ -223,26 +234,26 @@ class Mesh:
         n = 0
         for e in range(nelems):
             for f in range(nfaces):
-                self.elem_to_elem_map.append(
-                    faces[n].neighbor_elem_id)
-                self.elem_to_face_map.append(
-                    faces[n].neighbor_face_id)
-                n = n+1
-        self.elem_to_elem_map =\
-            np.array(self.elem_to_elem_map).reshape((nelems, nfaces))
-        self.elem_to_face_map =\
-            np.array(self.elem_to_face_map).reshape((nelems, nfaces))
+                self.elem_to_elem_map.append(faces[n].neighbor_elem_id)
+                self.elem_to_face_map.append(faces[n].neighbor_face_id)
+                n = n + 1
+        self.elem_to_elem_map = np.array(self.elem_to_elem_map).reshape(
+            (nelems, nfaces)
+        )
+        self.elem_to_face_map = np.array(self.elem_to_face_map).reshape(
+            (nelems, nfaces)
+        )
 
     def find_physical_coordinates(self, N):
         self.N = N
-        self.Nq = N+1
+        self.Nq = N + 1
 
         if self.get_ndim() == 3:
-            self.Nfp = (N+1)*(N+1)
-            self.Np = (N+1)*(N+1)*(N+1)
+            self.Nfp = (N + 1) * (N + 1)
+            self.Np = (N + 1) * (N + 1) * (N + 1)
         else:
-            self.Nfp = (N+1)
-            self.Np = (N+1)*(N+1)
+            self.Nfp = N + 1
+            self.Np = (N + 1) * (N + 1)
 
         z_1, jnk = gauss_lobatto(1)
         z_N, jnk = gauss_lobatto(N)
@@ -258,12 +269,9 @@ class Mesh:
                 y = self.y[e, :]
                 z = self.z[e, :]
 
-                xx = np.array([x[0], x[1], x[3], x[2], x[4],
-                               x[5], x[7], x[6]])
-                yy = np.array([y[0], y[1], y[3], y[2], y[4],
-                               y[5], y[7], y[6]])
-                zz = np.array([z[0], z[1], z[3], z[2], z[4],
-                               z[5], z[7], z[6]])
+                xx = np.array([x[0], x[1], x[3], x[2], x[4], x[5], x[7], x[6]])
+                yy = np.array([y[0], y[1], y[3], y[2], y[4], y[5], y[7], y[6]])
+                zz = np.array([z[0], z[1], z[3], z[2], z[4], z[5], z[7], z[6]])
 
                 xe = kron(J, J, J, xx)
                 ye = kron(J, J, J, yy)
@@ -306,68 +314,72 @@ class Mesh:
                 yr, ys, yt = gradient(self.ye[e, :], n)
                 zr, zs, zt = gradient(self.ze[e, :], n)
 
-                J = xr*(ys*zt-yt*zs)-yr*(xs*zt-xt*zs)+zr*(xs*yt-ys*xt)
+                J = (
+                    xr * (ys * zt - yt * zs)
+                    - yr * (xs * zt - xt * zs)
+                    + zr * (xs * yt - ys * xt)
+                )
                 self.jaco.append(J)
 
-                rx = (ys*zt-yt*zs)/J
-                sx = (yt*zr-yr*zt)/J
-                tx = (yr*zs-ys*zr)/J
+                rx = (ys * zt - yt * zs) / J
+                sx = (yt * zr - yr * zt) / J
+                tx = (yr * zs - ys * zr) / J
 
-                ry = -(zt*xs-zs*xt)/J
-                sy = -(zr*xt-zt*xr)/J
-                ty = -(zs*xr-zr*xs)/J
+                ry = -(zt * xs - zs * xt) / J
+                sy = -(zr * xt - zt * xr) / J
+                ty = -(zs * xr - zr * xs) / J
 
-                rz = (xs*yt-xt*ys)/J
-                sz = -(xr*yt-xt*yr)/J
-                tz = (xr*ys-xs*yr)/J
+                rz = (xs * yt - xt * ys) / J
+                sz = -(xr * yt - xt * yr) / J
+                tz = (xr * ys - xs * yr) / J
 
-                g11 = rx*rx+ry*ry+rz*rz
-                g12 = rx*sx+ry*sy+rz*sz
-                g13 = rx*tx+ry*ty+rz*tz
-                g22 = sx*sx+sy*sy+sz*sz
-                g23 = sx*tx+sy*ty+sz*tz
-                g33 = tx*tx+ty*ty+tz*tz
+                g11 = rx * rx + ry * ry + rz * rz
+                g12 = rx * sx + ry * sy + rz * sz
+                g13 = rx * tx + ry * ty + rz * tz
+                g22 = sx * sx + sy * sy + sz * sz
+                g23 = sx * tx + sy * ty + sz * tz
+                g33 = tx * tx + ty * ty + tz * tz
 
-                B = reference_mass_matrix_3d(n-1)
+                B = reference_mass_matrix_3d(n - 1)
                 self.mass.append(B)
 
                 g = np.zeros((3, 3, g11.size))
-                g[0, 0, :] = g11*B*J
-                g[0, 1, :] = g12*B*J
-                g[0, 2, :] = g13*B*J
-                g[1, 0, :] = g12*B*J
-                g[1, 1, :] = g22*B*J
-                g[1, 2, :] = g23*B*J
-                g[2, 0, :] = g13*B*J
-                g[2, 1, :] = g23*B*J
-                g[2, 2, :] = g33*B*J
+                g[0, 0, :] = g11 * B * J
+                g[0, 1, :] = g12 * B * J
+                g[0, 2, :] = g13 * B * J
+                g[1, 0, :] = g12 * B * J
+                g[1, 1, :] = g22 * B * J
+                g[1, 2, :] = g23 * B * J
+                g[2, 0, :] = g13 * B * J
+                g[2, 1, :] = g23 * B * J
+                g[2, 2, :] = g33 * B * J
                 self.geom.append(g)
         else:
             for e in range(self.get_num_elems()):
                 Xr, xs = gradient_2d(self.xe[e, :], n)
                 yr, ys = gradient_2d(self.ye[e, :], n)
 
-                J = Xr*ys-yr*xs
+                J = Xr * ys - yr * xs
                 self.jaco.append(J)
 
-                rx = ys/J
-                sx = -yr/J
+                rx = ys / J
+                sx = -yr / J
 
-                ry = -xs/J
-                sy = Xr/J
+                ry = -xs / J
+                sy = Xr / J
 
-                g11 = rx*rx+ry*ry
-                g12 = rx*sx+ry*sy
-                g22 = sx*sx+sy*sy
+                g11 = rx * rx + ry * ry
+                g12 = rx * sx + ry * sy
+                g22 = sx * sx + sy * sy
 
-                B = reference_mass_matrix_2d(n-1)
+                B = reference_mass_matrix_2d(n - 1)
                 self.mass.append(B)
 
                 g = np.zeros((2, 2, g11.size))
-                g[0, 0, :] = g11*B*J
-                g[0, 1, :] = g12*B*J
-                g[1, 0, :] = g12*B*J
-                g[1, 1, :] = g22*B*J
+                g[0, 0, :] = g11 * B * J
+                g[0, 1, :] = g12 * B * J
+                g[1, 0, :] = g12 * B * J
+                g[1, 1, :] = g22 * B * J
                 self.geom.append(g)
 
         self.geom = np.array(self.geom)
@@ -382,28 +394,27 @@ class Mesh:
         count = 0
         for e in range(nelem):
             for n in range(Np):
-                points.append(Point(self.xe[e, n], self.ye[e, n],
-                                    self.ze[e, n], count))
+                points.append(Point(self.xe[e, n], self.ye[e, n], self.ze[e, n], count))
                 count += 1
 
         points = sorted(points, key=cmp_to_key(compare_points))
 
         tol = 1e-12
-        size = nelem*Np
+        size = nelem * Np
         global_id = 1
 
         self.global_to_local = []
         self.global_start = [0]
 
-        for i in range(size-1):
+        for i in range(size - 1):
             points[i].global_id = global_id
             self.global_to_local.append(points[i].sequence_id)
-            if get_distance(points[i], points[i+1]) > tol:
+            if get_distance(points[i], points[i + 1]) > tol:
                 global_id += 1
-                self.global_start.append(i+1)
+                self.global_start.append(i + 1)
 
-        points[size-1].global_id = global_id
-        self.global_to_local.append(points[size-1].sequence_id)
+        points[size - 1].global_id = global_id
+        self.global_to_local.append(points[size - 1].sequence_id)
         self.global_start.append(size)
 
         self.global_to_local = np.array(self.global_to_local)
@@ -426,7 +437,7 @@ class Mesh:
 
         self.rmult = np.ones((size,), dtype=np.float64)
         self.gs.gs(self.rmult, gs_double, gs_add)
-        self.rmult = 1.0/self.rmult
+        self.rmult = 1.0 / self.rmult
 
     def dssum(self, x):
         self.gs.gs(x, gs_double, gs_add)
@@ -448,20 +459,20 @@ class Mesh:
         self.mask = np.ones((nelem, Np))
         for e in range(nelem):
             for n in range(Np):
-                if abs(self.xe[e, n]-xmin) < tol:
+                if abs(self.xe[e, n] - xmin) < tol:
                     self.mask[e, n] = 0
-                if abs(self.xe[e, n]-xmax) < tol:
+                if abs(self.xe[e, n] - xmax) < tol:
                     self.mask[e, n] = 0
-                if abs(self.ye[e, n]-ymin) < tol:
+                if abs(self.ye[e, n] - ymin) < tol:
                     self.mask[e, n] = 0
-                if abs(self.ye[e, n]-ymax) < tol:
+                if abs(self.ye[e, n] - ymax) < tol:
                     self.mask[e, n] = 0
-                if abs(self.ze[e, n]-zmin) < tol:
+                if abs(self.ze[e, n] - zmin) < tol:
                     self.mask[e, n] = 0
-                if abs(self.ze[e, n]-zmax) < tol:
+                if abs(self.ze[e, n] - zmax) < tol:
                     self.mask[e, n] = 0
 
-        self.mask = self.mask.reshape((nelem*Np,))
+        self.mask = self.mask.reshape((nelem * Np,))
 
     def get_global_to_local_map(self):
         return self.global_to_local, self.global_start
@@ -469,31 +480,31 @@ class Mesh:
     def get_mask_ids(self):
         ids = np.argwhere(self.mask == 0)
         m, n = ids.shape
-        return ids.reshape((m*n,))
+        return ids.reshape((m * n,))
 
     def apply_mask(self, x):
         nelem = self.get_num_elems()
         Np = self.Np
 
-        for i in range(nelem*Np):
-            x[i] = self.mask[i]*x[i]
+        for i in range(nelem * Np):
+            x[i] = self.mask[i] * x[i]
 
         return x
 
     def get_x(self):
         nelem = self.get_num_elems()
         Np = self.Np
-        return self.xe.reshape((nelem*Np,))
+        return self.xe.reshape((nelem * Np,))
 
     def get_y(self):
         nelem = self.get_num_elems()
         Np = self.Np
-        return self.ye.reshape((nelem*Np,))
+        return self.ye.reshape((nelem * Np,))
 
     def get_z(self):
         nelem = self.get_num_elems()
         Np = self.Np
-        return self.ze.reshape((nelem*Np,))
+        return self.ze.reshape((nelem * Np,))
 
     def get_rmult(self):
         return self.rmult
@@ -506,12 +517,12 @@ class Mesh:
     def get_jaco(self):
         nelem = self.get_num_elems()
         Np = self.Np
-        return np.array(self.jaco).reshape((nelem*Np,))
+        return np.array(self.jaco).reshape((nelem * Np,))
 
     def get_mass(self):
         nelem = self.get_num_elems()
         Np = self.Np
-        return np.array(self.mass).reshape((nelem*Np,))
+        return np.array(self.mass).reshape((nelem * Np,))
 
 
 def load_mesh(fname):

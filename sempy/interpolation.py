@@ -10,10 +10,10 @@ def lagrange(x_out, x_in):
     a = np.ones((n_in,))
     for i in range(n_in):
         for j in range(i):
-            a[i] = a[i]*(x_in[i]-x_in[j])
-        for j in range(i+1, n_in):
-            a[i] = a[i]*(x_in[i]-x_in[j])
-    a = 1.0/a
+            a[i] = a[i] * (x_in[i] - x_in[j])
+        for j in range(i + 1, n_in):
+            a[i] = a[i] * (x_in[i] - x_in[j])
+    a = 1.0 / a
 
     J = np.zeros((n_out, n_in))
     s = np.ones((n_in,))
@@ -22,7 +22,7 @@ def lagrange(x_out, x_in):
     for i in range(n_out):
         x = x_out[i]
         for j in range(1, n_in):
-            s[j] = s[j-1]*(x-x_in[j-1])
-            t[n_in-j-1] = t[n_in-j]*(x-x_in[n_in-j])
-        J[i, :] = a*s*t
+            s[j] = s[j - 1] * (x - x_in[j - 1])
+            t[n_in - j - 1] = t[n_in - j] * (x - x_in[n_in - j])
+        J[i, :] = a * s * t
     return J

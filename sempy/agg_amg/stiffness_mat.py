@@ -1,7 +1,9 @@
 import numpy as np
 import scipy.sparse as sp
 import matplotlib.pyplot as plt
-#np.set_printoptions(threshold=np.inf)
+
+# np.set_printoptions(threshold=np.inf)
+
 
 def get_maskl(t):
     E = t.shape[0]
@@ -13,7 +15,7 @@ def get_maskl(t):
     edge[0:2, :] = etmp[0:2, :]
     edge[2:4, :] = etmp[1:3, :]
     edge[4:6, :] = etmp[2:4, :]
-    edge = np.reshape(edge, (2, 3*E), order='F')
+    edge = np.reshape(edge, (2, 3 * E), order="F")
 
     edge = np.sort(edge, axis=0)
     edge = edge.T
@@ -24,10 +26,10 @@ def get_maskl(t):
     flag = np.zeros((nedge,), dtype=np.int32)
 
     # Mark non-isolated edges with flag=1
-    for k in range(nedge-1):
-        if np.all(edge[k, :] == edge[k+1, :]):
-            flag[k] = flag[k]+1
-            flag[k+1] = flag[k+1]+1
+    for k in range(nedge - 1):
+        if np.all(edge[k, :] == edge[k + 1, :]):
+            flag[k] = flag[k] + 1
+            flag[k + 1] = flag[k + 1] + 1
 
     # Numpy bug, same vector can't be on both sides
     flag[ind] = flag.copy()
@@ -55,7 +57,7 @@ def get_maskl(t):
     for e in range(E):
         for j in range(3):
             g = t[e, j]
-            flag[g] = flag[g]*maskL[e, j]
+            flag[g] = flag[g] * maskL[e, j]
 
     gbdry = np.zeros((ng,), dtype=np.int32)
     nbdry = -1
@@ -64,7 +66,7 @@ def get_maskl(t):
             g = t[e, j]
             maskL[e, j] = flag[g]
             if flag[g] == 0:
-                nbdry = nbdry+1
+                nbdry = nbdry + 1
                 gbdry[nbdry] = g
 
     gbdry = gbdry[:nbdry]
@@ -75,7 +77,7 @@ def get_maskl(t):
 
 def fem_mat(p, t):
     nt = t.shape[0]
-    nl = 3*nt
+    nl = 3 * nt
 
     y23 = p[t[:, 1], 1] - p[t[:, 2], 1]
     y31 = p[t[:, 2], 1] - p[t[:, 0], 1]
@@ -84,7 +86,7 @@ def fem_mat(p, t):
     x13 = p[t[:, 0], 0] - p[t[:, 2], 0]
     x21 = p[t[:, 1], 0] - p[t[:, 0], 0]
 
-    area = 0.5*(x21*y31 - y12*x13)
+    area = 0.5 * (x21 * y31 - y12 * x13)
     aream = np.min(area)
     areaM = np.max(area)
 
@@ -101,51 +103,51 @@ def fem_mat(p, t):
     x32 = p[t[:, 2], 0] - p[t[:, 1], 0]
     x13 = p[t[:, 0], 0] - p[t[:, 2], 0]
     x21 = p[t[:, 1], 0] - p[t[:, 0], 0]
-    area4i = 1./area
-    area4i = 0.25*area4i
+    area4i = 1.0 / area
+    area4i = 0.25 * area4i
 
     # Include endpoints or not?
     i0 = np.arange(0, nt)
-    i1 = np.arange(1, nt+1)
+    i1 = np.arange(1, nt + 1)
 
     A1 = np.zeros((3, 3, nt))
     B1 = A1.copy()
 
-    A1[0, 0, :] = area4i*(y23*y23+x32*x32)
-    A1[0, 1, :] = area4i*(y23*y31+x32*x13)
-    A1[0, 2, :] = area4i*(y23*y12+x32*x21)
-    A1[1, 0, :] = area4i*(y31*y23+x13*x32)
-    A1[1, 1, :] = area4i*(y31*y31+x13*x13)
-    A1[1, 2, :] = area4i*(y31*y12+x13*x21)
-    A1[2, 0, :] = area4i*(y12*y23+x21*x32)
-    A1[2, 1, :] = area4i*(y12*y31+x21*x13)
-    A1[2, 2, :] = area4i*(y12*y12+x21*x21)
+    A1[0, 0, :] = area4i * (y23 * y23 + x32 * x32)
+    A1[0, 1, :] = area4i * (y23 * y31 + x32 * x13)
+    A1[0, 2, :] = area4i * (y23 * y12 + x32 * x21)
+    A1[1, 0, :] = area4i * (y31 * y23 + x13 * x32)
+    A1[1, 1, :] = area4i * (y31 * y31 + x13 * x13)
+    A1[1, 2, :] = area4i * (y31 * y12 + x13 * x21)
+    A1[2, 0, :] = area4i * (y12 * y23 + x21 * x32)
+    A1[2, 1, :] = area4i * (y12 * y31 + x21 * x13)
+    A1[2, 2, :] = area4i * (y12 * y12 + x21 * x21)
 
-    dmass = 1         # Diagonal mass matrix
-    dmass = 0         # Full (local) mass matix
+    dmass = 1  # Diagonal mass matrix
+    dmass = 0  # Full (local) mass matix
     if dmass == 0:
-        B1[0, 0, :] = area/6
-        B1[0, 1, :] = area/12
-        B1[0, 2, :] = area/12
-        B1[1, 0, :] = area/12
-        B1[1, 1, :] = area/6
-        B1[1, 2, :] = area/12
-        B1[2, 0, :] = area/12
-        B1[2, 1, :] = area/12
-        B1[2, 2, :] = area/6
+        B1[0, 0, :] = area / 6
+        B1[0, 1, :] = area / 12
+        B1[0, 2, :] = area / 12
+        B1[1, 0, :] = area / 12
+        B1[1, 1, :] = area / 6
+        B1[1, 2, :] = area / 12
+        B1[2, 0, :] = area / 12
+        B1[2, 1, :] = area / 12
+        B1[2, 2, :] = area / 6
     else:
-        B1[0, 0, :] = area/3
-        B1[1, 1, :] = area/3
-        B1[2, 2, :] = area/3
+        B1[0, 0, :] = area / 3
+        B1[1, 1, :] = area / 3
+        B1[2, 2, :] = area / 3
 
     # for e=0:nt-1;        THIS APPROACH IS WAY TOO SLOW
     #   AL(3*e+(1:3),3*e+(1:3)) = A1(:,:,e+1);
     #   BL(3*e+(1:3),3*e+(1:3)) = B1(:,:,e+1);
     # end;
 
-    d0 = np.zeros((3, nt))        # main diagonal
-    d1 = np.zeros((3, nt))        # 1st lower diagonal
-    d2 = np.zeros((3, nt))        # 2nd lower diagonal
+    d0 = np.zeros((3, nt))  # main diagonal
+    d1 = np.zeros((3, nt))  # 1st lower diagonal
+    d2 = np.zeros((3, nt))  # 2nd lower diagonal
 
     d0[0, :] = A1[0, 0, :]
     d0[1, :] = A1[1, 1, :]
@@ -158,13 +160,13 @@ def fem_mat(p, t):
     d2 = np.reshape(d2, (nl,), order="F")
 
     AL = sp.diags((d2, d1), offsets=(-2, -1), shape=(nl, nl))
-    AL = AL+AL.T
+    AL = AL + AL.T
     Ad = sp.diags(d0, offsets=0, shape=(nl, nl))
-    AL = AL+Ad
+    AL = AL + Ad
 
-    d0 = np.zeros((3, nt))        # main diagonal
-    d1 = np.zeros((3, nt))        # 1st lower diagonal
-    d2 = np.zeros((3, nt))        # 2nd lower diagonal
+    d0 = np.zeros((3, nt))  # main diagonal
+    d1 = np.zeros((3, nt))  # 1st lower diagonal
+    d2 = np.zeros((3, nt))  # 2nd lower diagonal
 
     d0[0, :] = B1[0, 0, :]
     d0[1, :] = B1[1, 1, :]
@@ -177,12 +179,13 @@ def fem_mat(p, t):
     d2 = np.reshape(d2, (nl,), order="F")
 
     BL = sp.diags([d2, d1], offsets=(-2, -1), shape=(nl, nl))
-    BL = BL+BL.T
+    BL = BL + BL.T
     Ad = sp.diags(d0, offsets=0, shape=(nl, nl))
-    BL = BL+Ad
+    BL = BL + Ad
 
     Q = sp.csr_matrix(
-        (np.ones((nl,)), (np.arange(nl), np.reshape(t.T, (nl,), order="F"))))
+        (np.ones((nl,)), (np.arange(nl), np.reshape(t.T, (nl,), order="F")))
+    )
 
     return (AL, BL, Q)
 
@@ -195,7 +198,7 @@ def stiffness_mat(p, t):
 
     E, nv = t.shape
     t1 = np.unique(t.flatten())
-    nL = E*nv
+    nL = E * nv
     nb = len(t1)
     xb = p[t1, 0]
     yb = p[t1, 1]
@@ -215,27 +218,26 @@ def stiffness_mat(p, t):
 
     # Set up restriction/permutation matrix to make boundary nodes last
     ir = np.arange(nb)
-    n = nb-gbdry.shape[0]
+    n = nb - gbdry.shape[0]
     temp_ir = ir.copy()
-    temp_ir[gbdry] = ir[gbdry] + 2*nb
+    temp_ir[gbdry] = ir[gbdry] + 2 * nb
     ir = temp_ir
-    #ind = np.lexsort((ir,));
+    # ind = np.lexsort((ir,));
     ind = np.argsort(ir)
-    #i_s = ir[ind; # Not used
+    # i_s = ir[ind; # Not used
     ind = ind[:n]
 
     P = sp.eye(nb).tocsr()
     P = P[:, ind]
     R = P.T
 
-
     ### Plot a function that is 1 in the interior, 0 on the boundary
-    f = np.ones((n,),dtype=np.int32) ## 1 in Interior
-    fb = R.T.dot(f)                  ## Extend by 0 to the boundary
+    f = np.ones((n,), dtype=np.int32)  ## 1 in Interior
+    fb = R.T.dot(f)  ## Extend by 0 to the boundary
     plt.figure()
-    ax = plt.axes(projection='3d')
-    ax.plot_trisurf(p[:,0], p[:,1], fb, triangles=t)
-    ax.plot(p[gbdry,0], p[gbdry,1],  "ro")
+    ax = plt.axes(projection="3d")
+    ax.plot_trisurf(p[:, 0], p[:, 1], fb, triangles=t)
+    ax.plot(p[gbdry, 0], p[gbdry, 1], "ro")
     plt.show(block=False)
     plt.pause(1)
     plt.close()
