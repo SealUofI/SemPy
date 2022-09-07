@@ -7,11 +7,12 @@ setup(
     license="MIT",
     packages=find_packages(),
     package_data={"": ["meshes/*.msh"]},
+    # Some older versions of these packages will likely work
     install_requires=[
-        "numpy==1.22.0",
-        "meshio==3.3.0",
-        "matplotlib==3.1.1",
-        # 'mayavi==4.6.0',
-        "pytest==5.2.2",
+        "numpy>=1.22.0",
+        "meshio>=3.3.0",
+        "matplotlib>=3.1.1",
+        # 'mayavi>=4.6.0',
+        "pytest>=5.2.2",
     ],
 )
