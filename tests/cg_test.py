@@ -1,5 +1,4 @@
 import numpy as np
-import pytest
 
 from sempy.iterative import cg
 
