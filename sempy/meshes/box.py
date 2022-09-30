@@ -1,6 +1,7 @@
 import numpy as np
-from sempy.quadrature import gauss_lobatto
+
 from sempy.interpolation import lagrange
+from sempy.quadrature import gauss_lobatto
 
 
 def reference(M):

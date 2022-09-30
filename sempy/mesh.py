@@ -1,25 +1,18 @@
-import meshio
 import os
-import numpy as np
-
 from functools import cmp_to_key
 
-from sempy import debug, comm, comm
-from sempy.quadrature import gauss_lobatto
+import meshio
+import numpy as np
+from gslib_wrapper import (GS, gs_add, gs_double, gs_float, gs_int, gs_long,
+                           gs_max, gs_min)
+
+from sempy import comm, debug
+from sempy.gradient import (gradient, gradient_2d, gradient_transpose,
+                            gradient_transpose_2d)
 from sempy.interpolation import lagrange
 from sempy.kron import kron, kron_2d
-
-from sempy.mass import reference_mass_matrix_3d, reference_mass_matrix_2d
-from sempy.gradient import (
-    gradient,
-    gradient_2d,
-    gradient_transpose,
-    gradient_transpose_2d,
-)
-
-from gslib_wrapper import GS
-from gslib_wrapper import gs_double, gs_float, gs_long, gs_int
-from gslib_wrapper import gs_add, gs_min, gs_max
+from sempy.mass import reference_mass_matrix_2d, reference_mass_matrix_3d
+from sempy.quadrature import gauss_lobatto
 
 
 class Point:
@@ -160,9 +153,15 @@ class Mesh:
                 else:
                     self.z.append(0)
 
-        self.x = np.array(self.x).reshape((self.get_num_elems(), self.get_num_verts()))
-        self.y = np.array(self.y).reshape((self.get_num_elems(), self.get_num_verts()))
-        self.z = np.array(self.z).reshape((self.get_num_elems(), self.get_num_verts()))
+        self.x = np.array(self.x).reshape(
+            (self.get_num_elems(), self.get_num_verts())
+        )
+        self.y = np.array(self.y).reshape(
+            (self.get_num_elems(), self.get_num_verts())
+        )
+        self.z = np.array(self.z).reshape(
+            (self.get_num_elems(), self.get_num_verts())
+        )
 
         # TODO: Read in boundary faces from mesh
 
@@ -193,7 +192,9 @@ class Mesh:
         nface_verts = self.get_num_face_verts()
         if debug:
             print(
-                "elems/faces/face_verts: {}/{}/{}".format(nelems, nfaces, nface_verts)
+                "elems/faces/face_verts: {}/{}/{}".format(
+                    nelems, nfaces, nface_verts
+                )
             )
 
         face_to_vert_map = self.get_face_to_vert_map()
@@ -394,7 +395,9 @@ class Mesh:
         count = 0
         for e in range(nelem):
             for n in range(Np):
-                points.append(Point(self.xe[e, n], self.ye[e, n], self.ze[e, n], count))
+                points.append(
+                    Point(self.xe[e, n], self.ye[e, n], self.ze[e, n], count)
+                )
                 count += 1
 
         points = sorted(points, key=cmp_to_key(compare_points))

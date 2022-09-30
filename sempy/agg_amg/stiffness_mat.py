@@ -1,6 +1,6 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import scipy.sparse as sp
-import matplotlib.pyplot as plt
 
 # np.set_printoptions(threshold=np.inf)
 

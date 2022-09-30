@@ -1,16 +1,11 @@
-import pytest
 import numpy as np
+import pytest
 
-from sempy.gradient import (
-    gradient,
-    gradient_2d,
-    gradient_transpose,
-    gradient_transpose_2d,
-)
-
-from sempy.mesh import load_mesh
-from sempy.iterative import pcg, cg
 from sempy.elliptic import elliptic_cg
+from sempy.gradient import (gradient, gradient_2d, gradient_transpose,
+                            gradient_transpose_2d)
+from sempy.iterative import cg, pcg
+from sempy.mesh import load_mesh
 
 
 def test_single_element_pcg_sin_3d():
@@ -55,7 +50,14 @@ def test_single_element_pcg_sin_3d():
     x = np.sin(np.pi * X) * np.sin(np.pi * Y) * np.sin(np.pi * Z)
     x = mask(x)
 
-    b = 3 * np.pi * np.pi * np.sin(np.pi * X) * np.sin(np.pi * Y) * np.sin(np.pi * Z)
+    b = (
+        3
+        * np.pi
+        * np.pi
+        * np.sin(np.pi * X)
+        * np.sin(np.pi * Y)
+        * np.sin(np.pi * Z)
+    )
     b = b * B * J
     b = mask(b)
 
@@ -112,7 +114,14 @@ def test_single_element_cg_sin_3d():
     x = np.sin(np.pi * X) * np.sin(np.pi * Y) * np.sin(np.pi * Z)
     x = mask(x)
 
-    b = 3 * np.pi * np.pi * np.sin(np.pi * X) * np.sin(np.pi * Y) * np.sin(np.pi * Z)
+    b = (
+        3
+        * np.pi
+        * np.pi
+        * np.sin(np.pi * X)
+        * np.sin(np.pi * Y)
+        * np.sin(np.pi * Z)
+    )
     b = b * B * J
     b = mask(b)
 
@@ -144,7 +153,14 @@ def test_multi_element_cg_sin_3d():
     x = np.sin(np.pi * X) * np.sin(np.pi * Y) * np.sin(np.pi * Z)
     x = mesh.apply_mask(x)
 
-    b = 3 * np.pi * np.pi * np.sin(np.pi * X) * np.sin(np.pi * Y) * np.sin(np.pi * Z)
+    b = (
+        3
+        * np.pi
+        * np.pi
+        * np.sin(np.pi * X)
+        * np.sin(np.pi * Y)
+        * np.sin(np.pi * Z)
+    )
     b = b * B * J
     b = mesh.dssum(b)
     b = mesh.apply_mask(b)

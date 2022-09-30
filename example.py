@@ -1,27 +1,18 @@
+import time
+
+import matplotlib.pyplot as plt
 import numpy as np
 import numpy.linalg as nla
 import scipy.linalg as sla
-
-from sempy.meshes.curved import trapezoid
-from sempy.meshes.box import reference, reference_2d, box_ab
-
-from sempy.gradient import (
-    gradient,
-    gradient_2d,
-    gradient_transpose,
-    gradient_transpose_2d,
-)
-
-from sempy.iterative import cg, pcg
+from mayavi import mlab
 
 from sempy.derivative import reference_derivative_matrix
-
+from sempy.gradient import (gradient, gradient_2d, gradient_transpose,
+                            gradient_transpose_2d)
+from sempy.iterative import cg, pcg
 from sempy.mass import reference_mass_matrix_1d
-
-from mayavi import mlab
-import matplotlib.pyplot as plt
-
-import time
+from sempy.meshes.box import box_ab, reference, reference_2d
+from sempy.meshes.curved import trapezoid
 
 example_2d = 0
 plot_on = 0
@@ -224,7 +215,9 @@ for N in range(2, 10):
     if example_2d:
         x_cg, niter_cg = cg(Ax_2d, b, tol, maxit, verbose)
         x_mass, niter_mass = pcg(Ax_2d, precon_mass, b, tol, maxit, verbose)
-        x_jacobi, niter_jacobi = pcg(Ax_2d, precon_jacobi_2d, b, tol, maxit, verbose)
+        x_jacobi, niter_jacobi = pcg(
+            Ax_2d, precon_jacobi_2d, b, tol, maxit, verbose
+        )
         x_fdm, niter_fdm = pcg(Ax_2d, precon_fdm_2d, b, tol, maxit, verbose)
     else:
         x_cg, niter_cg = cg(Ax, b, tol, maxit, verbose)

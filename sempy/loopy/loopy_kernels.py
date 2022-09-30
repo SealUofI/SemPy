@@ -1,10 +1,10 @@
-import numpy as np
 import loopy as lp
+import numpy as np
 import pyopencl as cl
 import pyopencl.array
 import pyopencl.clrandom
-from loopy.version import LOOPY_USE_LANGUAGE_VERSION_2018_2
 from loopy.kernel.data import AddressSpace
+from loopy.version import LOOPY_USE_LANGUAGE_VERSION_2018_2
 
 from sempy.types import SEMPY_SCALAR
 
@@ -167,10 +167,16 @@ def gen_elliptic_Ax_knl(nElem, n):
         end
         """,
         kernel_data=[
-            lp.GlobalArg("U", SEMPY_SCALAR, shape=(nElem * n * n * n,), order="C"),
+            lp.GlobalArg(
+                "U", SEMPY_SCALAR, shape=(nElem * n * n * n,), order="C"
+            ),
             lp.GlobalArg("D", SEMPY_SCALAR, shape=(n, n), order="C"),
-            lp.GlobalArg("result", SEMPY_SCALAR, shape=(nElem * n * n * n,), order="C"),
-            lp.GlobalArg("g", SEMPY_SCALAR, shape=(nElem, 3, 3, n * n * n), order="C"),
+            lp.GlobalArg(
+                "result", SEMPY_SCALAR, shape=(nElem * n * n * n,), order="C"
+            ),
+            lp.GlobalArg(
+                "g", SEMPY_SCALAR, shape=(nElem, 3, 3, n * n * n), order="C"
+            ),
             # If fix params can remove these
             # lp.GlobalArg("Ur", SEMPY_SCALAR, shape=(3,n*n*n), order="C"),
             # lp.GlobalArg("W", SEMPY_SCALAR, shape=(3,n*n*n,), order="C"),
@@ -411,7 +417,7 @@ if __name__ == "__main__":
     # setup
     # -----
     lp.set_caching_enabled(False)
-    from warnings import filterwarnings, catch_warnings
+    from warnings import catch_warnings, filterwarnings
 
     filterwarnings("error", category=lp.LoopyWarning)
     import loopy.options

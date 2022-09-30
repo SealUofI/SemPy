@@ -24,7 +24,7 @@ y = R.dot(yb)
 J0 = get_J0(x, y)
 n, ncuts = J0.shape
 
-rr = x ** 2 + y ** 2
+rr = x**2 + y**2
 uex = 1.0 - rr
 f = 4 * B.dot(np.ones((n,)))
 

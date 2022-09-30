@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.sparse as sp
+
 from sempy.agg_amg.rcb_cut import rcb_cut
 
 

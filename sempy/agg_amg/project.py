@@ -1,6 +1,6 @@
-from sempy.agg_amg.vcycle import vcycle
-
 import numpy as np
+
+from sempy.agg_amg.vcycle import vcycle
 
 
 def precond(r, A, J0, prec):
@@ -33,7 +33,11 @@ def project(r, A, J0, tol, prec, verbose=0):
     z = precond(r, A, J0, prec)
     rz1 = np.dot(r, z)
     if verbose > 0:
-        print("z: {} r: {} rz1: {}".format(np.linalg.norm(z), np.linalg.norm(r), rz1))
+        print(
+            "z: {} r: {} rz1: {}".format(
+                np.linalg.norm(z), np.linalg.norm(r), rz1
+            )
+        )
 
     x = np.zeros_like(r)
     p = z.copy()

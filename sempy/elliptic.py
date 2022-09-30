@@ -1,23 +1,18 @@
-from sempy.gradient import (
-    gradient,
-    gradient_2d,
-    gradient_transpose,
-    gradient_transpose_2d,
-)
-from sempy.derivative import reference_derivative_matrix
-import sempy.loopy.loopy_kernels as lpk
-import loopy.options
-from warnings import filterwarnings, catch_warnings
-import numpy as np
+from warnings import catch_warnings, filterwarnings
 
 import loopy as lp
-from loopy.version import LOOPY_USE_LANGUAGE_VERSION_2018_2
-from loopy.kernel.data import AddressSpace
-
+import loopy.options
+import numpy as np
 import pyopencl as cl
 import pyopencl.array
 import pyopencl.clrandom
+from loopy.kernel.data import AddressSpace
+from loopy.version import LOOPY_USE_LANGUAGE_VERSION_2018_2
 
+import sempy.loopy.loopy_kernels as lpk
+from sempy.derivative import reference_derivative_matrix
+from sempy.gradient import (gradient, gradient_2d, gradient_transpose,
+                            gradient_transpose_2d)
 from sempy.types import SEMPY_SCALAR
 
 # setup
@@ -143,7 +138,9 @@ def elliptic_cg_loopy(mesh, b, tol=1e-12, maxit=100, verbose=0):
     d_p = cl.array.to_device(queue, b)
     while niter < maxit and rdotr > TOL:
         event, (d_Ap,) = knl_ax_lp(queue, D=d_D, U=d_p, g=d_G)
-        event, (d_Ap,) = knl_mask(queue, boundary_indices=d_masked_ids, dofs=d_Ap)
+        event, (d_Ap,) = knl_mask(
+            queue, boundary_indices=d_masked_ids, dofs=d_Ap
+        )
         event, (d_pAp,) = knl_inner(queue, x=d_Ap, y=d_p)
 
         pAp = d_pAp.get()

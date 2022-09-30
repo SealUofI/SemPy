@@ -1,17 +1,17 @@
-import loopy_kernels as lpk
-import loopy.options
-from warnings import filterwarnings, catch_warnings
-from sempy_types import SEMPY_SCALAR
-import numpy as np
+# Add to path so can import from above directory
+import sys
+from warnings import catch_warnings, filterwarnings
+
 import loopy as lp
+import loopy.options
+import loopy_kernels as lpk
+import numpy as np
 import pyopencl as cl
 import pyopencl.array
 import pyopencl.clrandom
-from loopy.version import LOOPY_USE_LANGUAGE_VERSION_2018_2
 from loopy.kernel.data import AddressSpace
-
-# Add to path so can import from above directory
-import sys
+from loopy.version import LOOPY_USE_LANGUAGE_VERSION_2018_2
+from sempy_types import SEMPY_SCALAR
 
 sys.path.append("../")
 
