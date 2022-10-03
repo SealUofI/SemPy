@@ -3,14 +3,12 @@ from functools import cmp_to_key
 
 import meshio
 import numpy as np
-from gslib_wrapper import (GS, gs_add, gs_double, gs_float, gs_int, gs_long,
-                           gs_max, gs_min)
+from gslib_wrapper import GS, gs_add, gs_double
 
 from sempy import comm, debug
-from sempy.gradient import (gradient, gradient_2d, gradient_transpose,
-                            gradient_transpose_2d)
+from sempy.gradient import gradient, gradient_2d
 from sempy.interpolation import lagrange
-from sempy.kron import kron, kron_2d
+from sempy.kron import kron
 from sempy.mass import reference_mass_matrix_2d, reference_mass_matrix_3d
 from sempy.quadrature import gauss_lobatto
 
@@ -149,7 +147,8 @@ class Mesh:
                 self.x.append(meshin.points[self.elem_to_vert_map[i, j], 0])
                 self.y.append(meshin.points[self.elem_to_vert_map[i, j], 1])
                 if self.ndim == 3:
-                    self.z.append(meshin.points[self.elem_to_vert_map[i, j], 2])
+                    self.z.append(
+                        meshin.points[self.elem_to_vert_map[i, j], 2])
                 else:
                     self.z.append(0)
 

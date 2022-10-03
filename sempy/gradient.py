@@ -1,7 +1,6 @@
 import numpy as np
 
 from sempy.derivative import reference_derivative_matrix
-from sempy.mass import reference_mass_matrix_2d, reference_mass_matrix_3d
 
 
 def gradient(U, n):

@@ -27,7 +27,7 @@ def box_01(M):
 def box_01_2d(M):
     x = np.array([0.0, 1.0, 0.0, 1.0])
     y = np.array([0.0, 0.0, 1.0, 1.0])
-    return box(x, y, z, M)
+    return box_2d(x, y, M)
 
 
 def box_ab(a, b, M):

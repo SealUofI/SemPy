@@ -231,9 +231,9 @@ def stiffness_mat(p, t):
     P = P[:, ind]
     R = P.T
 
-    ### Plot a function that is 1 in the interior, 0 on the boundary
-    f = np.ones((n,), dtype=np.int32)  ## 1 in Interior
-    fb = R.T.dot(f)  ## Extend by 0 to the boundary
+    # Plot a function that is 1 in the interior, 0 on the boundary
+    f = np.ones((n,), dtype=np.int32)  # 1 in Interior
+    fb = R.T.dot(f)  # Extend by 0 to the boundary
     plt.figure()
     ax = plt.axes(projection="3d")
     ax.plot_trisurf(p[:, 0], p[:, 1], fb, triangles=t)

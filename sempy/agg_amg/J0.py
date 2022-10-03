@@ -27,8 +27,8 @@ def get_J0(x, y):
 
             jt.append(j0 + low_n)
             jt.append(j1)
-            ind_lst_tmp[j0 : j0 + low_n] = ll[low]
-            ind_lst_tmp[j0 + low_n : j1] = ll[high]
+            ind_lst_tmp[j0: j0 + low_n] = ll[low]
+            ind_lst_tmp[j0 + low_n: j1] = ll[high]
         ja = jt
         ind_lst = ind_lst_tmp.copy()
         n_cuts = n_cuts * 2

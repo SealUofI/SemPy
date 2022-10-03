@@ -1,12 +1,6 @@
-# from mayavi import mlab
-import matplotlib.pyplot as plt
 import numpy as np
-import numpy.linalg as nla
-import scipy.linalg as sla
 
 from sempy.elliptic import elliptic_cg, elliptic_cg_loopy
-from sempy.gradient import (gradient, gradient_2d, gradient_transpose,
-                            gradient_transpose_2d)
 from sempy.mesh import load_mesh
 
 N = 10
@@ -50,13 +44,10 @@ x_cg_loopy, niter_loopy = elliptic_cg_loopy(
     mesh, b, tol=1e-8, maxit=10000, verbose=0
 )
 
+err = np.linalg.norm(x_cg - x_cg_loopy)
+print(f"CG: iters (host/device): {niter}/{niter_loopy} difference: {err}")
 print(
-    "CG iters (host/device): {}/{} error: {}".format(niter, niter_loopy, error)
-)
-print(
-    "is nan? (host/device): {}/{}".format(
-        np.isnan(x_cg).any(), np.isnan(x_cg_loopy).any()
-    )
+    f"Is nan? (host/device): {np.isnan(x_cg).any()}/{np.isnan(x_cg_loopy).any()}"
 )
 assert np.allclose(x, x_cg, 1e-8)
 assert np.allclose(x, x_cg_loopy, 1e-8)

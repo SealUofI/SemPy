@@ -3,8 +3,6 @@ import numpy as np
 import pyopencl as cl
 import pyopencl.array
 import pyopencl.clrandom
-from loopy.kernel.data import AddressSpace
-from loopy.version import LOOPY_USE_LANGUAGE_VERSION_2018_2
 
 from sempy.types import SEMPY_SCALAR
 
@@ -77,9 +75,9 @@ def gen_CG_iteration():
         """
         {[i,j,k,l]: 0<=i,j,k,l<n }
         """,
-        """ 
+        """
         # Calculated with some other function
-        #<> Ap[i] = sum(j, A[i,j]*p[j]) {id=Ap} 
+        # <> Ap[i] = sum(j, A[i,j]*p[j]) {id=Ap}
 
         <> a = rdotr_prev / sum(j, p[j]*Ap[j]) {id=a}
         x[l] = x[l] + a*p[l] {id=x, dep=a}
@@ -163,7 +161,7 @@ def gen_elliptic_Ax_knl(nElem, n):
         <> W[d1,kkk] = sum(d0, g[e,d1,d0,kkk]*pr[d0,kkk]) {id=W, dep=*grad*}
         result[e*nnn + iit*n + k0t] = sum(j,W[0,iit*n + j]*D[j,k0t]) {id=res0, dep=W}
         result[e*nnn + lt*nn + it*n + kt] = result[e*nnn + lt*nn + it*n + kt] + sum(j,D[j,it]*W[1, lt*nn + j*n + kt]) {id=res1,dep=res0}
-        result[e*nnn + i0t*nn + kkt] = result[e*nnn + i0t*nn + kkt] + sum(j,D[j,i0t]*W[2, j*nn + kkt]) {id=res2,dep=res1}           
+        result[e*nnn + i0t*nn + kkt] = result[e*nnn + i0t*nn + kkt] + sum(j,D[j,i0t]*W[2, j*nn + kkt]) {id=res2,dep=res1}
         end
         """,
         kernel_data=[
