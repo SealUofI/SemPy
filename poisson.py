@@ -47,7 +47,7 @@ x_cg_loopy, niter_loopy = elliptic_cg_loopy(
 err = np.linalg.norm(x_cg - x_cg_loopy)
 print(f"CG: iters (host/device): {niter}/{niter_loopy} difference: {err}")
 print(
-    f"Is nan? (host/device): {np.isnan(x_cg).any()}/{np.isnan(x_cg_loopy).any()}"
+    f"Is nan (host/device)? {np.isnan(x_cg).any()}/{np.isnan(x_cg_loopy).any()}"
 )
 assert np.allclose(x, x_cg, 1e-8)
 assert np.allclose(x, x_cg_loopy, 1e-8)

@@ -221,8 +221,8 @@ for N in range(2, 10):
         x_cg, niter_cg = cg(Ax, b, tol, maxit, verbose)
         tt = time.process_time() - t
         elapsed_cg.append(tt)
-        #    x_mass  ,niter_mass  =pcg(Ax,precon_mass  ,b,tol,maxit,verbose)
-        #    x_jacobi,niter_jacobi=pcg(Ax,precon_jacobi,b,tol,maxit,verbose)
+        # x_mass  ,niter_mass  =pcg(Ax,precon_mass  ,b,tol,maxit,verbose)
+        # x_jacobi,niter_jacobi=pcg(Ax,precon_jacobi,b,tol,maxit,verbose)
         t = time.process_time()
         x_fdm, niter_fdm = pcg(Ax, precon_fdm, b, tol, maxit, verbose)
         tt = time.process_time() - t
@@ -231,7 +231,6 @@ for N in range(2, 10):
     niters_fdm.append(niter_fdm)
     niters_cg.append(niter_cg)
     orders.append(N)
-
 
 plt.figure()
 plt.plot(orders, elapsed_cg, "-o")
@@ -268,12 +267,3 @@ plt.ylabel("# iterations", fontsize=16)
 plt.xlabel("N - order", fontsize=16)
 plt.legend(loc=0)
 plt.savefig("niter_fdm_cg.pdf", bbox_inches="tight")
-
-# if plot_on:
-#    if example_2d:
-#      print("N/A")
-#    else:
-#        mlab.figure()
-#        mlab.points3d(X,Y,Z,(x_cg-x_fdm).reshape((n,n,n)),scale_mode="none",scale_factor=0.1)
-#        mlab.axes()
-#        mlab.show()

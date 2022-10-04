@@ -1,7 +1,5 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import scipy.sparse.linalg as sla
-from mpl_toolkits.mplot3d import Axes3D
 
 from sempy.agg_amg.J0 import get_J0
 from sempy.agg_amg.project import project

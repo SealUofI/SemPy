@@ -149,8 +149,8 @@ def gen_elliptic_Ax_knl(nElem, n):
             "{[e]: 0<=e<nElem}",
         ],
         """
-        #<> nn = n*n
-        #<> nnn = nn*n
+        # <> nn = n*n
+        # <> nnn = nn*n
         for e
         with {id_prefix=grad}
             # Better to just pass in D.T?

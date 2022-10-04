@@ -22,8 +22,7 @@ def precond(r, A, J0, prec):
 
 
 def project(r, A, J0, tol, prec, verbose=0):
-    n_iter, max_iter = 0, 100
-
+    max_iter = 100
     if tol < 0:
         max_iter = abs(tol)
         tol = 1e-3
