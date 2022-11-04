@@ -1,7 +1,7 @@
 matplotlib
 mayavi
 meshio
-numpy
+numpy>=1.12.0
 pyopencl
 pytest
 scipy
