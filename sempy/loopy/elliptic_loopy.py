@@ -1,17 +1,14 @@
-import loopy_kernels as lpk
-import loopy.options
-from warnings import filterwarnings, catch_warnings
-from sempy_types import SEMPY_SCALAR
-import numpy as np
+# Add to path so can import from above directory
+import sys
+from warnings import filterwarnings
+
 import loopy as lp
+import loopy.options
+import loopy_kernels as lpk
 import pyopencl as cl
 import pyopencl.array
 import pyopencl.clrandom
 from loopy.version import LOOPY_USE_LANGUAGE_VERSION_2018_2
-from loopy.kernel.data import AddressSpace
-
-# Add to path so can import from above directory
-import sys
 
 sys.path.append("../")
 
@@ -39,35 +36,31 @@ g_app = lpk.gen_apply_geometric_factors_knl()
 
 
 def gradient(queue, U, D):
-
     n = D.shape[0]
     nn = n * n
-    nnn = nn * n
 
     evt, (Ur,) = mxm(queue, A=U.reshape(nn, n), X=D.transpose())
     evt, (Us,) = tp(queue, A2d=D, X3d=U.reshape(n, n, n))
     evt, (Ut,) = mxm(queue, A=D, X=U.reshape(n, nn))
+
     return cl.array.concatenate([Ur.ravel(), Us.ravel(), Ut.ravel()], axis=0)
 
 
 def gradient_tranpose(queue, W, D):
-
     n = D.shape[0]
     nn = n * n
-    nnn = nn * n
 
     evt, (Ur,) = mxm(queue, A=W[0, :].reshape(nn, n), X=D)
     evt, (Us,) = tp(queue, A2d=D.transpose(), X3d=W[1, :].reshape(n, n, n))
     evt, (Ut,) = mxm(queue, A=D.transpose(), X=W[2, :].reshape(n, nn))
     evt, (result,) = tvs(queue, Ur.ravel(), Us.ravel(), Ut.ravel())
+
     return result
 
 
 def elliptic_ax(queue, mesh, p, D):
-    g = mesh.get_geom()
     nelem = mesh.get_num_elems()
     Np = mesh.Np
-    Nq = mesh.Nq
 
     p_ = p.reshape((nelem, Np))
     ap = cl.array.empty_like(p_)

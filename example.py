@@ -1,27 +1,16 @@
+import time
+
+import matplotlib.pyplot as plt
 import numpy as np
-import numpy.linalg as nla
 import scipy.linalg as sla
 
-from sempy.meshes.curved import trapezoid
-from sempy.meshes.box import reference, reference_2d, box_ab
-
-from sempy.gradient import (
-    gradient,
-    gradient_2d,
-    gradient_transpose,
-    gradient_transpose_2d,
-)
-
-from sempy.iterative import cg, pcg
-
 from sempy.derivative import reference_derivative_matrix
-
+from sempy.gradient import (gradient, gradient_2d, gradient_transpose,
+                            gradient_transpose_2d)
+from sempy.iterative import cg, pcg
 from sempy.mass import reference_mass_matrix_1d
-
-from mayavi import mlab
-import matplotlib.pyplot as plt
-
-import time
+from sempy.meshes.box import reference_2d
+from sempy.meshes.curved import trapezoid
 
 example_2d = 0
 plot_on = 0
@@ -224,14 +213,16 @@ for N in range(2, 10):
     if example_2d:
         x_cg, niter_cg = cg(Ax_2d, b, tol, maxit, verbose)
         x_mass, niter_mass = pcg(Ax_2d, precon_mass, b, tol, maxit, verbose)
-        x_jacobi, niter_jacobi = pcg(Ax_2d, precon_jacobi_2d, b, tol, maxit, verbose)
+        x_jacobi, niter_jacobi = pcg(
+            Ax_2d, precon_jacobi_2d, b, tol, maxit, verbose
+        )
         x_fdm, niter_fdm = pcg(Ax_2d, precon_fdm_2d, b, tol, maxit, verbose)
     else:
         x_cg, niter_cg = cg(Ax, b, tol, maxit, verbose)
         tt = time.process_time() - t
         elapsed_cg.append(tt)
-        #    x_mass  ,niter_mass  =pcg(Ax,precon_mass  ,b,tol,maxit,verbose)
-        #    x_jacobi,niter_jacobi=pcg(Ax,precon_jacobi,b,tol,maxit,verbose)
+        # x_mass  ,niter_mass  =pcg(Ax,precon_mass  ,b,tol,maxit,verbose)
+        # x_jacobi,niter_jacobi=pcg(Ax,precon_jacobi,b,tol,maxit,verbose)
         t = time.process_time()
         x_fdm, niter_fdm = pcg(Ax, precon_fdm, b, tol, maxit, verbose)
         tt = time.process_time() - t
@@ -240,7 +231,6 @@ for N in range(2, 10):
     niters_fdm.append(niter_fdm)
     niters_cg.append(niter_cg)
     orders.append(N)
-
 
 plt.figure()
 plt.plot(orders, elapsed_cg, "-o")
@@ -277,12 +267,3 @@ plt.ylabel("# iterations", fontsize=16)
 plt.xlabel("N - order", fontsize=16)
 plt.legend(loc=0)
 plt.savefig("niter_fdm_cg.pdf", bbox_inches="tight")
-
-# if plot_on:
-#    if example_2d:
-#      print("N/A")
-#    else:
-#        mlab.figure()
-#        mlab.points3d(X,Y,Z,(x_cg-x_fdm).reshape((n,n,n)),scale_mode="none",scale_factor=0.1)
-#        mlab.axes()
-#        mlab.show()

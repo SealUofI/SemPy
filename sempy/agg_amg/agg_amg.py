@@ -1,11 +1,9 @@
-from sempy.agg_amg.J0 import get_J0
-from sempy.agg_amg.stiffness_mat import stiffness_mat
-from sempy.agg_amg.project import project
-
-import numpy as np
-import scipy.sparse.linalg as sla
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+import numpy as np
+
+from sempy.agg_amg.J0 import get_J0
+from sempy.agg_amg.project import project
+from sempy.agg_amg.stiffness_mat import stiffness_mat
 
 np.set_printoptions(threshold=np.inf)
 
@@ -24,7 +22,7 @@ y = R.dot(yb)
 J0 = get_J0(x, y)
 n, ncuts = J0.shape
 
-rr = x ** 2 + y ** 2
+rr = x**2 + y**2
 uex = 1.0 - rr
 f = 4 * B.dot(np.ones((n,)))
 
