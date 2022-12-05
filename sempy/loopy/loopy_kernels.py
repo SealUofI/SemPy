@@ -1,10 +1,8 @@
-import numpy as np
 import loopy as lp
+import numpy as np
 import pyopencl as cl
 import pyopencl.array
 import pyopencl.clrandom
-from loopy.version import LOOPY_USE_LANGUAGE_VERSION_2018_2
-from loopy.kernel.data import AddressSpace
 
 from sempy.types import SEMPY_SCALAR
 
@@ -77,9 +75,9 @@ def gen_CG_iteration():
         """
         {[i,j,k,l]: 0<=i,j,k,l<n }
         """,
-        """ 
+        """
         # Calculated with some other function
-        #<> Ap[i] = sum(j, A[i,j]*p[j]) {id=Ap} 
+        # <> Ap[i] = sum(j, A[i,j]*p[j]) {id=Ap}
 
         <> a = rdotr_prev / sum(j, p[j]*Ap[j]) {id=a}
         x[l] = x[l] + a*p[l] {id=x, dep=a}
@@ -151,8 +149,8 @@ def gen_elliptic_Ax_knl(nElem, n):
             "{[e]: 0<=e<nElem}",
         ],
         """
-        #<> nn = n*n
-        #<> nnn = nn*n
+        # <> nn = n*n
+        # <> nnn = nn*n
         for e
         with {id_prefix=grad}
             # Better to just pass in D.T?
@@ -163,14 +161,20 @@ def gen_elliptic_Ax_knl(nElem, n):
         <> W[d1,kkk] = sum(d0, g[e,d1,d0,kkk]*pr[d0,kkk]) {id=W, dep=*grad*}
         result[e*nnn + iit*n + k0t] = sum(j,W[0,iit*n + j]*D[j,k0t]) {id=res0, dep=W}
         result[e*nnn + lt*nn + it*n + kt] = result[e*nnn + lt*nn + it*n + kt] + sum(j,D[j,it]*W[1, lt*nn + j*n + kt]) {id=res1,dep=res0}
-        result[e*nnn + i0t*nn + kkt] = result[e*nnn + i0t*nn + kkt] + sum(j,D[j,i0t]*W[2, j*nn + kkt]) {id=res2,dep=res1}           
+        result[e*nnn + i0t*nn + kkt] = result[e*nnn + i0t*nn + kkt] + sum(j,D[j,i0t]*W[2, j*nn + kkt]) {id=res2,dep=res1}
         end
         """,
         kernel_data=[
-            lp.GlobalArg("U", SEMPY_SCALAR, shape=(nElem * n * n * n,), order="C"),
+            lp.GlobalArg(
+                "U", SEMPY_SCALAR, shape=(nElem * n * n * n,), order="C"
+            ),
             lp.GlobalArg("D", SEMPY_SCALAR, shape=(n, n), order="C"),
-            lp.GlobalArg("result", SEMPY_SCALAR, shape=(nElem * n * n * n,), order="C"),
-            lp.GlobalArg("g", SEMPY_SCALAR, shape=(nElem, 3, 3, n * n * n), order="C"),
+            lp.GlobalArg(
+                "result", SEMPY_SCALAR, shape=(nElem * n * n * n,), order="C"
+            ),
+            lp.GlobalArg(
+                "g", SEMPY_SCALAR, shape=(nElem, 3, 3, n * n * n), order="C"
+            ),
             # If fix params can remove these
             # lp.GlobalArg("Ur", SEMPY_SCALAR, shape=(3,n*n*n), order="C"),
             # lp.GlobalArg("W", SEMPY_SCALAR, shape=(3,n*n*n,), order="C"),
@@ -411,7 +415,7 @@ if __name__ == "__main__":
     # setup
     # -----
     lp.set_caching_enabled(False)
-    from warnings import filterwarnings, catch_warnings
+    from warnings import catch_warnings, filterwarnings
 
     filterwarnings("error", category=lp.LoopyWarning)
     import loopy.options

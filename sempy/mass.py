@@ -1,4 +1,5 @@
 import numpy as np
+
 from sempy.quadrature import gauss_lobatto
 
 

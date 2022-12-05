@@ -1,6 +1,6 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import scipy.sparse as sp
-import matplotlib.pyplot as plt
 
 # np.set_printoptions(threshold=np.inf)
 
@@ -51,7 +51,8 @@ def get_maskl(t):
                 maskL[e, ptr[:, j]] = 0
 
     #
-    #   Share boundary vertices flagged by isolated edges with neighboring elements
+    # Share boundary vertices flagged by isolated edges with neighboring
+    # elements
     #
     flag = np.ones((ng,))
     for e in range(E):
@@ -87,8 +88,6 @@ def fem_mat(p, t):
     x21 = p[t[:, 1], 0] - p[t[:, 0], 0]
 
     area = 0.5 * (x21 * y31 - y12 * x13)
-    aream = np.min(area)
-    areaM = np.max(area)
 
     eflip = np.flatnonzero(area < 0)
     nflip = len(eflip)
@@ -105,10 +104,6 @@ def fem_mat(p, t):
     x21 = p[t[:, 1], 0] - p[t[:, 0], 0]
     area4i = 1.0 / area
     area4i = 0.25 * area4i
-
-    # Include endpoints or not?
-    i0 = np.arange(0, nt)
-    i1 = np.arange(1, nt + 1)
 
     A1 = np.zeros((3, 3, nt))
     B1 = A1.copy()
@@ -191,30 +186,25 @@ def fem_mat(p, t):
 
 
 def stiffness_mat(p, t):
-
     #  load c.xy;    p=c; load c.pts;   t=c;
     #  load a.xy;    p=a; load a.pts;   t=a;
-    #  load pts.dat;    p=pts; load tri.dat;  t=tri;
-
+    #  load pts.dat; p=pts; load tri.dat;  t=tri;
     E, nv = t.shape
     t1 = np.unique(t.flatten())
-    nL = E * nv
     nb = len(t1)
     xb = p[t1, 0]
     yb = p[t1, 1]
 
     AL, BL, Q = fem_mat(p, t)
-
     maskL, gbdry = get_maskl(t)
 
-    #   Here, add Dirichlet/Neumann discriminators, if desired.
-
-    ### nbdry = size(gbdry,1);
+    # Here, add Dirichlet/Neumann discriminators, if desired.
+    # nbdry = size(gbdry,1);
     # rbdry = sqrt(p(gbdry,1).^2+p(gbdry,2).^2);
-    ### ibbox = find(rbdry > 0.41);
+    # ibbox = find(rbdry > 0.41);
     # %ibbox = find(rbdry < 0.41);
-    ### dbdry = gbdry(ibbox);
-    ### gbdry = dbdry;
+    # dbdry = gbdry(ibbox);
+    # gbdry = dbdry;
 
     # Set up restriction/permutation matrix to make boundary nodes last
     ir = np.arange(nb)
@@ -231,9 +221,9 @@ def stiffness_mat(p, t):
     P = P[:, ind]
     R = P.T
 
-    ### Plot a function that is 1 in the interior, 0 on the boundary
-    f = np.ones((n,), dtype=np.int32)  ## 1 in Interior
-    fb = R.T.dot(f)  ## Extend by 0 to the boundary
+    # Plot a function that is 1 in the interior, 0 on the boundary
+    f = np.ones((n,), dtype=np.int32)  # 1 in Interior
+    fb = R.T.dot(f)  # Extend by 0 to the boundary
     plt.figure()
     ax = plt.axes(projection="3d")
     ax.plot_trisurf(p[:, 0], p[:, 1], fb, triangles=t)
