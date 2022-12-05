@@ -1,0 +1,8 @@
+matplotlib
+mayavi
+meshio
+numpy>=1.12.0
+pyopencl
+pytest
+scipy
+setuptools

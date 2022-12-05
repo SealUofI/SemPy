@@ -9,7 +9,7 @@ setup(
     package_data={"": ["meshes/*.msh"]},
     # Some older versions of these packages will likely work
     install_requires=[
-        "numpy>=1.22.0",
+        "numpy>=1.12.0",
         "meshio>=3.3.0",
         "matplotlib>=3.1.1",
         # 'mayavi>=4.6.0',
