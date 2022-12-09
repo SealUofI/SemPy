@@ -1,166 +1,194 @@
+from __future__ import annotations
 import numpy as np
-from scipy.sparse.linalg import LinearOperator
+from scipy.sparse.linalg import LinearOperator, aslinearoperator
+from scipy.sparse.linalg._interface import _get_dtype, MatrixLinearOperator
 from typing import Sequence, Iterable, Union
-from dataclasses import dataclass
-from numpy.typing import ArrayLike
+#from dataclasses import dataclass
+#from numpy.typing import ArrayLike
 from scipy.sparse import diags
 
-@dataclass
+ScalarType = Union[np.number, float, int]
+
+#@dataclass
 class KroneckerProductOperator(LinearOperator):
     # An operator scalar*(A x B x C ...)
-    # Should this be immutable?
-    terms: Sequence[Union[ArrayLike, KroneckerProductOperator, KroneckerProductSumOperator]]
-    order: Optional[str] = None # order for matvecs, should this be here?
-    scalar: Union[np.number, float, int] = 1
+
+    def __init__(self, *args, order:str='F'):#, scalar:ScalarType=1):
+        self.args = tuple([aslinearoperator(arg) for arg in args])
+        self.order=order # Order for the fast kronecker matvecs. Is this actually needed?
 
     @property
     def shape(self):
-        return tuple(np.product([term.shape for term in self.terms], axis=0))
-        
+        return tuple(np.product([term.shape for term in self.args], axis=0))
+    
     @property
     def dtype(self):
-        return np.result_type(*([self.scalar] + self.terms))
+        return _get_dtype(self.args)
 
     def _matvec(self, v):
-        if self.scalar != 1
-            v = self.scalar*v
-        if len(self.terms) == 1:
-            return self.terms[0]@v
-        elif len(self.terms) == 2:
-            return kron_2d(self.terms[1], self.terms[0], v, order=self.order)
-        elif len(self.terms) == 3:
-            return kron_2d(self.terms[2], self.terms[1], self.terms[0], v, order=self.order)
+        if len(self.args) == 1:
+            return self.args[0]@v
+        elif len(self.args) == 2:
+            return kron_2d(self.args[1], self.args[0], v, order=self.order)
+        elif len(self.args) == 3:
+            return kron(self.args[2], self.args[1], self.args[0], v, order=self.order)
         else:
-            raise NotImplementedError("Kronecker matvecs with more than three terms not implemented")
+            raise NotImplementedError("Kronecker matvecs with more than three args not implemented")
 
-    def _adjoint(self,v):
-        return KroneckerProductOperator([term.H for term in self.terms], scalar=self.scalar, order=self.order)
+    def _adjoint(self):
+        return KroneckerProductOperator(*[term.H for term in self.args], order=self.order)
     
     def _matmat(self, X):
-        # Not certain what order the output should have
-        if isinstance(X, KroneckerProductOperator):
-            return KroneckerProductOperator([A@B for (A, B) in zip(self.terms, X.terms)], scalar=self.scalar*X.scalar, order=self.order)
-        elif isinstance(X, KroneckerProductSumOperator)
-            return KroneckerProductSumOperator([self@term for term in X.terms], order=self.order)
+        if isinstance(X, KroneckerProductOperator) and all([A.shape[1] == B.shape[0] for (A,B) in zip(self.args, X.args)]):
+            return KroneckerProductOperator(*[A@B for (A, B) in zip(self.args, X.args)], order=self.order)
+        #elif isinstance(X, KroneckerProductSumOperator):
+        #    return KroneckerProductSumOperator(*[self@term for term in X.args], order=self.order)
         else:
             # Should probably handle the dense mxm case
             return super()._matmat(X)
 
+    """
     def __mul__(self, x):
         if np.isscalar(x):
-            return KroneckerProductOperator(self.terms, scalar=x*self.scalar, order=order)
+            return KroneckerProductOperator(*(self.args), scalar=x*self.scalar, order=self.order)
         else:
-            raise NotImplementedError("Only scalar multiplication supported")
+            return super().__mul__(x)
 
     def __add__(self, X):
         if isinstance(X, KroneckerProductOperator):
-            return KroneckerProductSumOperator([self, X], order=self.order)
+            return KroneckerProductSumOperator(*[self, X], order=self.order)
         elif isinstance(X, KroneckerProductSumOperator):
-            return KroneckerProductSumOperator([self] + X.terms, order=self.order)
+            return KroneckerProductSumOperator(*([self] + X.args), order=self.order)
+        elif 
         else:
             raise NotImplementedError("Addition only supported with other KroneckerProduct objects")
 
     def __sub__(self, X):
         if isinstance(X, KroneckerProductOperator):
-            return KroneckerProductSumOperator([self, X*-1], order=self.order)
-        elif isinstance(X, KroneckerProductiSumOperator):
-            return KroneckerProductSumOperator([self] + [term*-1 for term in X.terms], order=self.order)
+            return KroneckerProductSumOperator(*[self, X*-1], order=self.order)
+        elif isinstance(X, KroneckerProductSumOperator):
+            return KroneckerProductSumOperator(*([self] + [term*-1 for term in X.args]), order=self.order)
         else:
             raise NotImplementedError("Subtraction only supported with other KroneckerProduct objects")
 
-    def inv(self):
-        return KroneckerProductOperator([term.inv for term in self.terms], scalar=1/self.scalar, order=order)
+    # Would require forming any KroneckerProductSum operators
+    #def inv(self):
+    #    return KroneckerProductOperator([term.inv for term in self.args], scalar=1/self.scalar, order=order)
 
-    def diagonal(self):
-        return KroneckerProductOperator([diags(term.diagonal(), format="csr") for term in self.terms], scalar=self.scalar, order=self.order)
+    # These may not be defined for arbitary LinearOperator objects
 
-    def block_diagonal(self, intact=None):
+    def diagonal(self, as_operator=False):
+        if as_operator:
+            return KroneckerProductOperator(*[diags(term.diagonal(), format="csr") for term in self.args], scalar=self.scalar, order=self.order)
+        else:
+            return KroneckerProductOperator(*[term.diagonal() for term in self.args], scalar=self.scalar, order=self.order).to_sparse().A
+
+    def block_diagonal(self, keep_intact=None):
         if intact is None:
-            intact = len(self.terms) - 1
-        return KroneckerProductOperator([(diags(term.diagonal(), format="csr") if i != intact else term) for i, term in enumerate(self.terms)], scalar=self.scalar, order=self.order)
+            keep_intact = {len(self.args)-1}
+        return KroneckerProductOperator(*[(diags(term.diagonal(), format="csr") if i not in keep_intact else term) for i, term in enumerate(self.args)], scalar=self.scalar, order=self.order)
 
     # Add some functions to obtain the block lower and upper triangular portions?
+    #def block_triu(self, ks:Sequence=None, keep_intact:Sequence=None):
+    #    if ks is None:
+    #        ks = np.zeros((len(self.args),))
+    #    components = 
   
+    # TODO: Make this work recursively
+    """
     def to_sparse(self, format=None):
         from scipy.sparse import kron as spkron
-        result = spkron(self.scalar*self.terms[0], self.terms[1], format=format)
-        for term in self.terms[2:]:
-            result = spkron(result, term, format=format)
+        result = self.args[0].A
+        for term in self.args[1:]:
+            result = spkron(result, term.A, format=format)
+        print(result.A)
         return result
-
-
+    """ 
+    def to_dense(self):
+        from numpy import kron as npkron
+        result = self.scalar*self.args[0]
+        for term in self.args[1:]:
+            result = npkron(result, term)
+        return result
+    """
+       
+"""
 class KroneckerProductSumOperator(LinearOperator):
     # An operator A + B + C ... where A,B,C are KroneckerProductOperators of the same shape
-    terms: Iterable[KroneckerProductOperator, KroneckerProductSumOperator]
-    order: Optional[str] = None
+    #args: Iterable[KroneckerProductOperator, KroneckerProductSumOperator]
+    #order: Optional[str] = None
 
-    # Perhaps __init__ or post_init should attempt to combine terms
-    # Nothing here currently asserts an ordering on the terms
+    # Perhaps __init__ or post_init should attempt to combine args
+    # Nothing here currently asserts an ordering on the args
+    def __init__(self, *args: Iterable[Union[KroneckerProductOperator, KroneckerProductSumOperator]], order:str='F', scalar:ScalarType=1):
+        self.args = args
+        self.scalar=scalar
+        self.order=order
  
     @property
     def shape(self):
-        return terms[0].shape       
+        return args[0].shape       
  
     @property
     def dtype(self):
-        return np.result_type(*(self.terms))
+        return np.result_type(*(self.args))
 
     def _matvec(self, v):
-        v = terms[0]@v
-        for term in self.terms[1:]:
+        v = args[0]@v
+        for term in self.args[1:]:
             v += term@v
         return v
 
     def _adjoint(self,v):
-        return KroneckerProductSumOperator([term.H for term in self.terms], order=order)
+        return KroneckerProductSumOperator(*[term.H for term in self.args], order=order)
     
 
     def _matmat(self, X):
         if isinstance(X, KroneckerProductOperator):
-            return KroneckerProductSumOperator([term@X for term in self.terms], order=self.order)
+            return KroneckerProductSumOperator(*[term@X for term in self.args], order=self.order)
         #elif isinstance(X, KroneckerProductSumOperator): # Not a great implementation, probably ill-advised to use
             #from itertools import combinations
-            #return KroneckerProductSumOperator([A@B for A, B in combinations(self.terms, X)], order=self.order)
+            #return KroneckerProductSumOperator([A@B for A, B in combinations(self.args, X)], order=self.order)
         else:
             return super()._matmat(X)
 
     def __mul__(self, x):
         if np.isscalar(x):
-            return KroneckerProductSumOperator([term*x for term in self.terms] , order=order)
+            return KroneckerProductSumOperator(*[term*x for term in self.args] , order=order)
         else:
             raise NotImplementedError("Only scalar multiplication supported")
 
     def __add__(self, X):
         if isinstance(X, KroneckerProductOperator):
-            return KroneckerProductSumOperator(self.terms + [X], order=self.order)
+            return KroneckerProductSumOperator(*(self.args + [X]), order=self.order)
         elif isinstance(X, KroneckerProductSumOperator):
-            return KroneckerProductSumOperator(self.terms + X.terms, order=self.order)
+            return KroneckerProductSumOperator(*(self.args + X.args), order=self.order)
         else:
             raise NotImplementedError("Addition only supported with other KroneckerProduct objects")
 
     def __sub__(self, X):
         if isinstance(X, KroneckerProductOperator):
-            return KroneckerProductSumOperator(self.terms + [X*-1], order=self.order)
+            return KroneckerProductSumOperator(*(self.args + [X*-1]), order=self.order)
         elif isinstance(X, KroneckerProductSumOperator):
-            return KroneckerProductSumOperator(self.terms + [term*-1 for term in X.terms], order=self.order)
+            return KroneckerProductSumOperator(*(self.args + [term*-1 for term in X.args]), order=self.order)
         else:
             raise NotImplementedError("Subtraction only supported with other KroneckerProduct objects")
 
     def diagonal(self):
-        return KroneckerProductSumOperator([term.diagonal() for term in self.terms], order=self.order)
+        return KroneckerProductSumOperator(*[term.diagonal() for term in self.args], order=self.order)
 
     # Don't necessarily have to use the final term.
-    def block_diagonal(self, intact=None):
-        return KroneckerProductSumOperator([term.block_diagonal(intact=intact) for term in self.terms], order=self.order)
+    def block_diagonal(self, keep_intact=None):
+        return KroneckerProductSumOperator(*[term.block_diagonal(keep_intact=keep_intact) for term in self.args], order=self.order)
 
     def to_sparse(self, format=None):
-        result = self.terms[0].to_sparse(format=format)
-        for term in self.terms[1:]:
+        result = self.args[0].to_sparse(format=format)
+        for term in self.args[1:]:
             result += term.to_sparse(format=format)
         return result
+"""
 
-
-def kron_2d(Sy, Sx, U, order=None):
+def kron_2d(Sy, Sx, U, order='F'):
     nx, mx = Sx.shape
     ny, my = Sy.shape
 
@@ -173,7 +201,7 @@ def kron_2d(Sy, Sx, U, order=None):
     return U.reshape((nx * ny,), order=order)
 
 
-def kron(Sz, Sy, Sx, U, order=None):
+def kron(Sz, Sy, Sx, U, order='F'):
     nx, mx = Sx.shape
     ny, my = Sy.shape
     nz, mz = Sz.shape
@@ -182,8 +210,15 @@ def kron(Sz, Sy, Sx, U, order=None):
         U = U.reshape((mz, my, mx), order=order)
         U = np.einsum('ai,bj,ijk,ck->abc', Sz, Sy, U,
                       Sx, order=order, optimize=True)
+    elif all([isinstance(X, MatrixLinearOperator) and isinstance(X.A, np.ndarray) for X in [Sz, Sy, Sx]]):
+        U = U.reshape((mz, my, mx), order=order)
+        U = np.einsum('ai,bj,ijk,ck->abc', Sz.A, Sy.A, U,
+                      Sx.A, order=order, optimize=True)
     else:
         U = U.reshape((my * mz, mx), order=order)
+
+        print(Sx.shape, U.shape)
+        print(Sx.T.shape, U.shape)
         U = U @ Sx.T
 
         U = U.reshape((mz, my, nx), order=order)
