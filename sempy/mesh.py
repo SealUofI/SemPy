@@ -100,6 +100,8 @@ class Mesh:
         self.read(fname)
 
     def read(self, fname):
+        import meshio
+
         meshin = meshio.read(fname)
 
         # element to vertex map

@@ -1,22 +1,9 @@
 from warnings import filterwarnings
 
-import loopy as lp
-import loopy.options
 import numpy as np
-import pyopencl as cl
-import pyopencl.array
-import pyopencl.clrandom
-from loopy.version import LOOPY_USE_LANGUAGE_VERSION_2018_2
 
-import sempy.loopy.loopy_kernels as lpk
 from sempy.derivative import reference_derivative_matrix
 from sempy.gradient import gradient, gradient_transpose
-
-# setup
-# -----
-lp.set_caching_enabled(False)
-filterwarnings("error", category=lp.LoopyWarning)
-loopy.options.ALLOW_TERMINAL_COLORS = False
 
 
 def elliptic_ax(mesh, p):
@@ -87,6 +74,19 @@ def elliptic_cg(mesh, b, tol=1e-12, maxit=100, verbose=0):
 
 
 def elliptic_cg_loopy(mesh, b, tol=1e-12, maxit=100, verbose=0):
+    import loopy as lp
+    import loopy.options
+    import pyopencl as cl
+    import pyopencl.array
+    import pyopencl.clrandom
+    from loopy.version import LOOPY_USE_LANGUAGE_VERSION_2018_2
+
+    import sempy.loopy.loopy_kernels as lpk
+
+    lp.set_caching_enabled(False)
+    filterwarnings("error", category=lp.LoopyWarning)
+    loopy.options.ALLOW_TERMINAL_COLORS = False
+
     # Setup loopy
     ctx = cl.create_some_context(interactive=False)
     queue = cl.CommandQueue(ctx)
