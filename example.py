@@ -5,8 +5,12 @@ import numpy as np
 import scipy.linalg as sla
 
 from sempy.derivative import reference_derivative_matrix
-from sempy.gradient import (gradient, gradient_2d, gradient_transpose,
-                            gradient_transpose_2d)
+from sempy.gradient import (
+    gradient,
+    gradient_2d,
+    gradient_transpose,
+    gradient_transpose_2d,
+)
 from sempy.iterative import cg, pcg
 from sempy.mass import reference_mass_matrix_1d
 from sempy.meshes.box import reference_2d

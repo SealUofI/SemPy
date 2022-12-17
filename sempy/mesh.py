@@ -5,7 +5,6 @@ import meshio
 import numpy as np
 from gslib_wrapper import GS, gs_add, gs_double
 
-from sempy import comm, debug
 from sempy.gradient import gradient, gradient_2d
 from sempy.interpolation import lagrange
 from sempy.kron import kron
@@ -95,7 +94,7 @@ def compare_verts(f, g):
 
 
 class Mesh:
-    def __init__(self, fname):
+    def __init__(self, fname, debug=0):
         if not isinstance(fname, str):
             raise Exception("Only strings are allowed for file name")
         self.read(fname)
@@ -147,8 +146,7 @@ class Mesh:
                 self.x.append(meshin.points[self.elem_to_vert_map[i, j], 0])
                 self.y.append(meshin.points[self.elem_to_vert_map[i, j], 1])
                 if self.ndim == 3:
-                    self.z.append(
-                        meshin.points[self.elem_to_vert_map[i, j], 2])
+                    self.z.append(meshin.points[self.elem_to_vert_map[i, j], 2])
                 else:
                     self.z.append(0)
 
@@ -189,7 +187,7 @@ class Mesh:
         nelems = self.get_num_elems()
         nfaces = self.get_num_faces()
         nface_verts = self.get_num_face_verts()
-        if debug:
+        if self.debug:
             print(
                 "elems/faces/face_verts: {}/{}/{}".format(
                     nelems, nfaces, nface_verts
@@ -213,7 +211,7 @@ class Mesh:
 
         for i in range(nelems * nfaces - 1):
             if not compare_verts(faces[i], faces[i + 1]):
-                if debug:
+                if self.debug:
                     print(
                         "faces {}/{} and {}/{} match.".format(
                             faces[i].face_id,
@@ -434,7 +432,7 @@ class Mesh:
                 self.global_id[e, n] = points[count].global_id
                 count += 1
 
-        self.gs = GS(comm)
+        self.gs = GS(0)
         self.gs.setup(self.global_id.reshape((size,)))
 
         self.rmult = np.ones((size,), dtype=np.float64)

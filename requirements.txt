@@ -6,3 +6,4 @@ pyopencl
 pytest
 scipy
 setuptools
+mpi4py

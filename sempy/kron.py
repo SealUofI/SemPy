@@ -7,7 +7,7 @@ def kron_2d(Sy, Sx, U, order=None):
 
     U = U.reshape((my, mx), order=order)
     if all([isinstance(X, np.ndarray) for X in [Sy, Sx]]):
-        U = np.einsum('ai,ij,bj->ab', Sy, U, Sx, order=order, optimize=True)
+        U = np.einsum("ai,ij,bj->ab", Sy, U, Sx, order=order, optimize=True)
     else:
         U = Sy @ U @ Sx.T
 
@@ -21,8 +21,9 @@ def kron(Sz, Sy, Sx, U, order=None):
 
     if all([isinstance(X, np.ndarray) for X in [Sz, Sy, Sx]]):
         U = U.reshape((mz, my, mx), order=order)
-        U = np.einsum('ai,bj,ijk,ck->abc', Sz, Sy, U,
-                      Sx, order=order, optimize=True)
+        U = np.einsum(
+            "ai,bj,ijk,ck->abc", Sz, Sy, U, Sx, order=order, optimize=True
+        )
     else:
         U = U.reshape((my * mz, mx), order=order)
         U = U @ Sx.T
@@ -30,7 +31,7 @@ def kron(Sz, Sy, Sx, U, order=None):
         U = U.reshape((mz, my, nx), order=order)
 
         if isinstance(Sy, np.ndarray):
-            V = np.einsum('mj,ijk->imk', Sy, U, order=order, optimize=True)
+            V = np.einsum("mj,ijk->imk", Sy, U, order=order, optimize=True)
         else:
             V = np.empty((mz, ny, nx), order=order)
             for i in range(mz):
