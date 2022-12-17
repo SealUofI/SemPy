@@ -87,8 +87,8 @@ def project(r, A, J0, tol, prec, verbose=0):
             print("iter: {} norm: {}".format(k, np.linalg.norm(p)))
 
         if prec > 0:
-            a = np.dot(W[:, 0: k + 1].T, p)
-            p = p - np.dot(P[:, 0: k + 1], a)
+            a = np.dot(W[:, 0 : k + 1].T, p)
+            p = p - np.dot(P[:, 0 : k + 1], a)
         if verbose > 0:
             print("iter: {} norm: {}".format(k, np.linalg.norm(p)))
     return x, res, k + 1
