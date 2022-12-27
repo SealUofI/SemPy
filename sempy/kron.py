@@ -30,17 +30,35 @@ class KroneckerProductOperator(LinearOperator):
             return self.args[0]@v
         elif len(self.args) == 2:
             return kron_2d(self.args[1], self.args[0], v, order=self.order)
+            #return kron_2d(*self.args, v, order=self.order)
+            #return kron_2d(*[arg.A if isinstance(arg, MatrixLinearOperator) else arg for arg in self.args], v, order=self.order)
+
         elif len(self.args) == 3:
             return kron(self.args[2], self.args[1], self.args[0], v, order=self.order)
+            #return kron(*[arg.A if isinstance(arg, MatrixLinearOperator) else arg for arg in self.args], v, order=self.order)
         else:
             raise NotImplementedError("Kronecker matvecs with more than three args not implemented")
 
     def _adjoint(self):
         return KroneckerProductOperator(*[term.H for term in self.args], order=self.order)
+
+    def _transpose(self):
+        # Is this true in general?
+        return self._adjoint()   
+
+    def dot(self, x):
+        if isinstance(x, KroneckerProductOperator):
+            return self._matmat(x)
+        else:
+            return super().dot(x)
     
     def _matmat(self, X):
+        #print("HERE I AM")
         if isinstance(X, KroneckerProductOperator) and all([A.shape[1] == B.shape[0] for (A,B) in zip(self.args, X.args)]):
-            return KroneckerProductOperator(*[A@B for (A, B) in zip(self.args, X.args)], order=self.order)
+            if all([isinstance(A, MatrixLinearOperator) and isinstance(B, MatrixLinearOperator) for (A,B) in zip(self.args, X.args)]):
+                return KroneckerProductOperator(*[A.A@B.A for (A, B) in zip(self.args, X.args)], order=self.order)
+            else:
+                return KroneckerProductOperator(*[A@B for (A, B) in zip(self.args, X.args)], order=self.order)
         #elif isinstance(X, KroneckerProductSumOperator):
         #    return KroneckerProductSumOperator(*[self@term for term in X.args], order=self.order)
         else:
@@ -139,9 +157,8 @@ class KroneckerProductSumOperator(LinearOperator):
             v += term@v
         return v
 
-    def _adjoint(self,v):
+    def _adjoint(self):
         return KroneckerProductSumOperator(*[term.H for term in self.args], order=order)
-    
 
     def _matmat(self, X):
         if isinstance(X, KroneckerProductOperator):
@@ -186,8 +203,8 @@ class KroneckerProductSumOperator(LinearOperator):
         for term in self.args[1:]:
             result += term.to_sparse(format=format)
         return result
-"""
 
+"""
 def kron_2d(Sy, Sx, U, order='F'):
     nx, mx = Sx.shape
     ny, my = Sy.shape
@@ -206,21 +223,35 @@ def kron(Sz, Sy, Sx, U, order='F'):
     ny, my = Sy.shape
     nz, mz = Sz.shape
 
+    #print(type(Sz))
+    #print(type(Sy))
+    #print(type(Sx))
+    #print(type(U))
+    #print("HERE")
+
+    if isinstance(Sx, MatrixLinearOperator):
+        Sx = Sx.A
+    if isinstance(Sx, MatrixLinearOperator):
+        Sy = Sy.A
+    if isinstance(Sx, MatrixLinearOperator):
+        Sz = Sz.A
+
     if all([isinstance(X, np.ndarray) for X in [Sz, Sy, Sx]]):
         U = U.reshape((mz, my, mx), order=order)
         U = np.einsum('ai,bj,ijk,ck->abc', Sz, Sy, U,
                       Sx, order=order, optimize=True)
-    elif all([isinstance(X, MatrixLinearOperator) and isinstance(X.A, np.ndarray) for X in [Sz, Sy, Sx]]):
-        U = U.reshape((mz, my, mx), order=order)
-        U = np.einsum('ai,bj,ijk,ck->abc', Sz.A, Sy.A, U,
-                      Sx.A, order=order, optimize=True)
+    #elif all([isinstance(X, MatrixLinearOperator) and isinstance(X.A, np.ndarray) for X in [Sz, Sy, Sx]]):
+    #    U = U.reshape((mz, my, mx), order=order)
+    #    U = np.einsum('ai,bj,ijk,ck->abc', Sz.A, Sy.A, U,
+    #                  Sx.A, order=order, optimize=True)
     else:
         U = U.reshape((my * mz, mx), order=order)
 
-        print(Sx.shape, U.shape)
-        print(Sx.T.shape, U.shape)
-        U = U @ Sx.T
+        #print(type(U))
+        #print(type(Sx))
+        #print(Sx.T.shape, U.shape)
 
+        U = U @ Sx.T
         U = U.reshape((mz, my, nx), order=order)
 
         if isinstance(Sy, np.ndarray):
