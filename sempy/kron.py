@@ -239,7 +239,10 @@ def kron_2d(Sy, Sx, U, order='F'):
     if all([isinstance(X, np.ndarray) for X in [Sy, Sx]]):
         U = np.einsum('ai,ij,bj->ab', Sy, U, Sx, order=order, optimize=True)
     else:
-        U = Sy @ U @ Sx.T
+        if isinstance(Sx, LinearOperator):
+            UT = Sy@((Sx@U.T).T)
+        else:    
+            U = Sy @ U @ Sx.T
 
     return U.reshape((nx * ny,), order=order)
 
@@ -266,7 +269,10 @@ def kron(Sz, Sy, Sx, U, order='F'):
                       Sx, order=order, optimize=True)
     else:
         U = U.reshape((my * mz, mx), order=order)
-        U = U @ Sx.T
+        if isinstance(Sx, LinearOperator):
+            U = (Sx@U.T).T
+        else:
+            U = U @ Sx.T
         U = U.reshape((mz, my, nx), order=order)
 
         if isinstance(Sy, np.ndarray):
