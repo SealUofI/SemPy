@@ -9,58 +9,74 @@ from scipy.sparse import diags
 
 ScalarType = Union[np.number, float, int]
 
-#@dataclass
+# @dataclass
+
+
 class KroneckerProductOperator(LinearOperator):
     # An operator scalar*(A x B x C ...)
 
-    def __init__(self, *args, order:str='F'):#, scalar:ScalarType=1):
+    def __init__(self, *args, order: str = 'F'):  # , scalar:ScalarType=1):
         self.args = tuple([aslinearoperator(arg) for arg in args])
-        self.order=order # Order for the fast kronecker matvecs. Is this actually needed?
+        self.order = order  # Order for the fast kronecker matvecs. Is this actually needed?
 
     @property
     def shape(self):
         return tuple(np.product([term.shape for term in self.args], axis=0))
-    
+
     @property
     def dtype(self):
         return _get_dtype(self.args)
 
     def _matvec(self, v):
         if len(self.args) == 1:
-            return self.args[0]@v
+            return self.args[0] @ v
         elif len(self.args) == 2:
             return kron_2d(self.args[1], self.args[0], v, order=self.order)
-            #return kron_2d(*self.args, v, order=self.order)
-            #return kron_2d(*[arg.A if isinstance(arg, MatrixLinearOperator) else arg for arg in self.args], v, order=self.order)
+            # return kron_2d(*self.args, v, order=self.order)
+            # return kron_2d(*[arg.A if isinstance(arg, MatrixLinearOperator)
+            # else arg for arg in self.args], v, order=self.order)
 
         elif len(self.args) == 3:
-            return kron(self.args[2], self.args[1], self.args[0], v, order=self.order)
-            #return kron(*[arg.A if isinstance(arg, MatrixLinearOperator) else arg for arg in self.args], v, order=self.order)
+            return kron(
+                self.args[2],
+                self.args[1],
+                self.args[0],
+                v,
+                order=self.order)
+            # return kron(*[arg.A if isinstance(arg, MatrixLinearOperator) else
+            # arg for arg in self.args], v, order=self.order)
         else:
-            raise NotImplementedError("Kronecker matvecs with more than three args not implemented")
+            raise NotImplementedError(
+                "Kronecker matvecs with more than three args not implemented")
 
     def _adjoint(self):
-        return KroneckerProductOperator(*[term.H for term in self.args], order=self.order)
+        return KroneckerProductOperator(
+            *[term.H for term in self.args], order=self.order)
 
     def _transpose(self):
         # Is this true in general?
-        return self._adjoint()   
+        return self._adjoint()
 
     def dot(self, x):
         if isinstance(x, KroneckerProductOperator):
             return self._matmat(x)
         else:
             return super().dot(x)
-    
+
     def _matmat(self, X):
         #print("HERE I AM")
-        if isinstance(X, KroneckerProductOperator) and all([A.shape[1] == B.shape[0] for (A,B) in zip(self.args, X.args)]):
-            if all([isinstance(A, MatrixLinearOperator) and isinstance(B, MatrixLinearOperator) for (A,B) in zip(self.args, X.args)]):
-                return KroneckerProductOperator(*[A.A@B.A for (A, B) in zip(self.args, X.args)], order=self.order)
+        if isinstance(X, KroneckerProductOperator) and len(self.args) == len(X.args) \
+            and all([A.shape[1] == B.shape[0] for (A, B) in zip(self.args, X.args)]):
+            if all([isinstance(A, MatrixLinearOperator) and isinstance(
+                    B, MatrixLinearOperator) for (A, B) in zip(self.args, X.args)]):
+                return KroneckerProductOperator(
+                    *[A.A @ B.A for (A, B) in zip(self.args, X.args)], order=self.order)
             else:
-                return KroneckerProductOperator(*[A@B for (A, B) in zip(self.args, X.args)], order=self.order)
-        #elif isinstance(X, KroneckerProductSumOperator):
-        #    return KroneckerProductSumOperator(*[self@term for term in X.args], order=self.order)
+                return KroneckerProductOperator(
+                    *[A @ B for (A, B) in zip(self.args, X.args)], order=self.order)
+        # elif isinstance(X, KroneckerProductSumOperator):
+        # return KroneckerProductSumOperator(*[self@term for term in X.args],
+        # order=self.order)
         else:
             # Should probably handle the dense mxm case
             return super()._matmat(X)
@@ -77,7 +93,7 @@ class KroneckerProductOperator(LinearOperator):
             return KroneckerProductSumOperator(*[self, X], order=self.order)
         elif isinstance(X, KroneckerProductSumOperator):
             return KroneckerProductSumOperator(*([self] + X.args), order=self.order)
-        elif 
+        elif
         else:
             raise NotImplementedError("Addition only supported with other KroneckerProduct objects")
 
@@ -110,10 +126,11 @@ class KroneckerProductOperator(LinearOperator):
     #def block_triu(self, ks:Sequence=None, keep_intact:Sequence=None):
     #    if ks is None:
     #        ks = np.zeros((len(self.args),))
-    #    components = 
-  
+    #    components =
+
     # TODO: Make this work recursively
     """
+
     def to_sparse(self, format=None):
         from scipy.sparse import kron as spkron
         result = self.args[0].A
@@ -121,7 +138,7 @@ class KroneckerProductOperator(LinearOperator):
             result = spkron(result, term.A, format=format)
         print(result.A)
         return result
-    """ 
+    """
     def to_dense(self):
         from numpy import kron as npkron
         result = self.scalar*self.args[0]
@@ -129,7 +146,8 @@ class KroneckerProductOperator(LinearOperator):
             result = npkron(result, term)
         return result
     """
-       
+
+
 """
 class KroneckerProductSumOperator(LinearOperator):
     # An operator A + B + C ... where A,B,C are KroneckerProductOperators of the same shape
@@ -142,11 +160,11 @@ class KroneckerProductSumOperator(LinearOperator):
         self.args = args
         self.scalar=scalar
         self.order=order
- 
+
     @property
     def shape(self):
-        return args[0].shape       
- 
+        return args[0].shape
+
     @property
     def dtype(self):
         return np.result_type(*(self.args))
@@ -205,9 +223,17 @@ class KroneckerProductSumOperator(LinearOperator):
         return result
 
 """
+
+
 def kron_2d(Sy, Sx, U, order='F'):
+    #print("HERE 2D")
     nx, mx = Sx.shape
     ny, my = Sy.shape
+
+    if isinstance(Sx, MatrixLinearOperator):
+        Sx = Sx.A
+    if isinstance(Sy, MatrixLinearOperator):
+        Sy = Sy.A
 
     U = U.reshape((my, mx), order=order)
     if all([isinstance(X, np.ndarray) for X in [Sy, Sx]]):
@@ -219,36 +245,37 @@ def kron_2d(Sy, Sx, U, order='F'):
 
 
 def kron(Sz, Sy, Sx, U, order='F'):
+    #print("HERE 3D")
     nx, mx = Sx.shape
     ny, my = Sy.shape
     nz, mz = Sz.shape
 
-    #print(type(Sz))
-    #print(type(Sy))
-    #print(type(Sx))
-    #print(type(U))
-    #print("HERE")
+    # print(type(Sz))
+    # print(type(Sy))
+    # print(type(Sx))
+    # print(type(U))
+    # print("HERE")
 
     if isinstance(Sx, MatrixLinearOperator):
         Sx = Sx.A
-    if isinstance(Sx, MatrixLinearOperator):
+    if isinstance(Sy, MatrixLinearOperator):
         Sy = Sy.A
-    if isinstance(Sx, MatrixLinearOperator):
+    if isinstance(Sz, MatrixLinearOperator):
         Sz = Sz.A
 
     if all([isinstance(X, np.ndarray) for X in [Sz, Sy, Sx]]):
         U = U.reshape((mz, my, mx), order=order)
         U = np.einsum('ai,bj,ijk,ck->abc', Sz, Sy, U,
                       Sx, order=order, optimize=True)
-    #elif all([isinstance(X, MatrixLinearOperator) and isinstance(X.A, np.ndarray) for X in [Sz, Sy, Sx]]):
+    # elif all([isinstance(X, MatrixLinearOperator) and isinstance(X.A, np.ndarray) for X in [Sz, Sy, Sx]]):
     #    U = U.reshape((mz, my, mx), order=order)
     #    U = np.einsum('ai,bj,ijk,ck->abc', Sz.A, Sy.A, U,
     #                  Sx.A, order=order, optimize=True)
     else:
         U = U.reshape((my * mz, mx), order=order)
 
-        #print(type(U))
-        #print(type(Sx))
+        # print(type(U))
+        # print(type(Sx))
         #print(Sx.T.shape, U.shape)
 
         U = U @ Sx.T
