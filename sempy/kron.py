@@ -245,16 +245,13 @@ def kron_2d(Sy, Sx, U, order='F'):
 
 
 def kron(Sz, Sy, Sx, U, order='F'):
+    # If order=='C' then the operators
+    # should be transposed?
+
     #print("HERE 3D")
     nx, mx = Sx.shape
     ny, my = Sy.shape
     nz, mz = Sz.shape
-
-    # print(type(Sz))
-    # print(type(Sy))
-    # print(type(Sx))
-    # print(type(U))
-    # print("HERE")
 
     if isinstance(Sx, MatrixLinearOperator):
         Sx = Sx.A
@@ -267,17 +264,8 @@ def kron(Sz, Sy, Sx, U, order='F'):
         U = U.reshape((mz, my, mx), order=order)
         U = np.einsum('ai,bj,ijk,ck->abc', Sz, Sy, U,
                       Sx, order=order, optimize=True)
-    # elif all([isinstance(X, MatrixLinearOperator) and isinstance(X.A, np.ndarray) for X in [Sz, Sy, Sx]]):
-    #    U = U.reshape((mz, my, mx), order=order)
-    #    U = np.einsum('ai,bj,ijk,ck->abc', Sz.A, Sy.A, U,
-    #                  Sx.A, order=order, optimize=True)
     else:
         U = U.reshape((my * mz, mx), order=order)
-
-        # print(type(U))
-        # print(type(Sx))
-        #print(Sx.T.shape, U.shape)
-
         U = U @ Sx.T
         U = U.reshape((mz, my, nx), order=order)
 
