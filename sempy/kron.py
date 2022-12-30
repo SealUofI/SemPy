@@ -2,10 +2,11 @@ from __future__ import annotations
 import numpy as np
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
 from scipy.sparse.linalg._interface import _get_dtype, MatrixLinearOperator
+from scipy.linalg import eigh
 from typing import Sequence, Iterable, Union
 #from dataclasses import dataclass
 #from numpy.typing import ArrayLike
-from scipy.sparse import diags
+from scipy.sparse import diags, kron, eye
 
 ScalarType = Union[np.number, float, int]
 
@@ -16,7 +17,7 @@ class KroneckerProductOperator(LinearOperator):
     # An operator scalar*(A x B x C ...)
 
     def __init__(self, *args, order: str = 'F'):  # , scalar:ScalarType=1):
-        self.args = tuple([aslinearoperator(arg) for arg in args])
+        self.args = [aslinearoperator(arg) for arg in args]
         self.order = order  # Order for the fast kronecker matvecs. Is this actually needed?
 
     @property
@@ -224,6 +225,71 @@ class KroneckerProductSumOperator(LinearOperator):
 
 """
 
+def fdm_d_inv_2d(term1, term2):
+   
+    # Solve (My x Kx) + (Ky x Mx)
+    # Where My, Mx are SPD and Kx, Ky are symmetric
+    My = term1.args[0].A.A
+    Kx = term1.args[1].A.A
+    Ky = term2.args[0].A.A
+    Mx = term2.args[1].A.A
+
+    print(My)
+    print(Kx)    
+    print(Ky)
+    print(Mx)
+    exit()
+
+    Lx, Sx = eigh(Mx, Kx)
+    Lx = diags(Lx)
+    Ix = eye(Kx.shape[0])
+
+    Ly, Sy = eigh(My, Ky)
+    Ly = diags(Ly)
+    Iy = eye(Ky.shape[0])
+
+    S = KroneckerProductOperator(Sy, Sx)    
+    D = kron(Iy, Lx) + kron(Ly, Ix)
+    D = MatrixLinearOperator(diags(1/D.diagonal()))
+    inverse = S@D@S.T
+    #inverse = (S@S.T)@D #equivalent?
+
+    return inverse, (S, D)
+     
+    """
+    n = p + 1
+
+    Bh = reference_mass_matrix_1d(p)
+    Dh = reference_derivative_matrix(p)
+    Ah = Dh.T @ Bh @ Dh
+    Ah = 0.5 * (Ah + Ah.T)
+
+    I = np.identity(n, dtype=np.float64)
+    Ry = I[1:, :]
+
+    Ax = Rx @ Ah @ Rx.T
+    nx = Ax.shape[0]
+    Ay = Ry @ Ah @ Ry.T
+    ny = Ay.shape[0]
+    Bx = Rx @ Bh @ Rx.T
+    By = Ry @ Bh @ Ry.T
+
+    Lx, Sx = sla.eigh(Ax, Bx)
+    Lx = np.diag(Lx)
+    Ix = np.identity(nx, dtype=np.float64)
+    Ly, Sy = sla.eigh(Ay, By)
+    Ly = np.diag(Ly)
+    Iy = np.identity(ny, dtype=np.float64)
+
+    Lx = Lx.real
+    Ly = Ly.real
+
+    D = np.kron(Iy, Lx) + np.kron(Ly, Ix)
+    dinv = 1.0 / np.diag(D)
+
+    return Rx, Ry, Sx.real, Sy.real, dinv
+    """
+
 
 def kron_2d(Sy, Sx, U, order='F'):
     #print("HERE 2D")
@@ -268,6 +334,9 @@ def kron(Sz, Sy, Sx, U, order='F'):
         U = np.einsum('ai,bj,ijk,ck->abc', Sz, Sy, U,
                       Sx, order=order, optimize=True)
     else:
+        # Could check for identity matrices and
+        # do nothing in those cases to avoid 
+        # unnecessary copies.
         U = U.reshape((my * mz, mx), order=order)
         if isinstance(Sx, LinearOperator):
             U = (Sx@U.T).T
