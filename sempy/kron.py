@@ -6,7 +6,8 @@ from scipy.linalg import eigh
 from typing import Sequence, Iterable, Union
 #from dataclasses import dataclass
 #from numpy.typing import ArrayLike
-from scipy.sparse import diags, kron, eye
+from scipy.sparse import diags, eye
+from scipy.sparse import kron as spkron
 
 ScalarType = Union[np.number, float, int]
 
@@ -137,7 +138,7 @@ class KroneckerProductOperator(LinearOperator):
         result = self.args[0].A
         for term in self.args[1:]:
             result = spkron(result, term.A, format=format)
-        print(result.A)
+        #print(result.A)
         return result
     """
     def to_dense(self):
@@ -229,16 +230,20 @@ def fdm_d_inv_2d(term1, term2):
    
     # Solve (My x Kx) + (Ky x Mx)
     # Where My, Mx are SPD and Kx, Ky are symmetric
-    My = term1.args[0].A.A
-    Kx = term1.args[1].A.A
-    Ky = term2.args[0].A.A
-    Mx = term2.args[1].A.A
+    My = term1.args[0].A if isinstance(term1.args[0].A, np.ndarray) else term1.args[0].A.A
+    Kx = term1.args[1].A if isinstance(term1.args[1].A, np.ndarray) else term1.args[1].A.A
+    Ky = term2.args[0].A if isinstance(term2.args[0].A, np.ndarray) else term2.args[0].A.A
+    Mx = term2.args[1].A if isinstance(term2.args[1].A, np.ndarray) else term2.args[1].A.A
+
+    #R = eye(My.shape[0]-1, My.shape[0], k=1)
+    #My = R@My@R.T
+    #Ky = R@Ky@R.T
 
     print(My)
     print(Kx)    
     print(Ky)
     print(Mx)
-    exit()
+    #exit()
 
     Lx, Sx = eigh(Mx, Kx)
     Lx = diags(Lx)
@@ -249,10 +254,15 @@ def fdm_d_inv_2d(term1, term2):
     Iy = eye(Ky.shape[0])
 
     S = KroneckerProductOperator(Sy, Sx)    
-    D = kron(Iy, Lx) + kron(Ly, Ix)
+    D = spkron(Iy, Lx) + spkron(Ly, Ix)
+    #D = D.diagonal()
+    #print(D)
+    #exit()
+    #return S, D
+    # What if there is a zero on the diagonal?
     D = MatrixLinearOperator(diags(1/D.diagonal()))
-    inverse = S@D@S.T
-    #inverse = (S@S.T)@D #equivalent?
+    #inverse = S@D@S.T
+    inverse = D@(S@S.T) #equivalent?
 
     return inverse, (S, D)
      
@@ -342,6 +352,7 @@ def kron(Sz, Sy, Sx, U, order='F'):
             U = (Sx@U.T).T
         else:
             U = U @ Sx.T
+
         U = U.reshape((mz, my, nx), order=order)
 
         if isinstance(Sy, np.ndarray):

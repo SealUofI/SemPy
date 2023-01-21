@@ -9,7 +9,8 @@ setup(
     package_data={"": ["meshes/*.msh"]},
     # Some older versions of these packages will likely work
     install_requires=[
-        "numpy>=1.12.0",
+        "scipy>=1.8", #_get_dtype() added in this version
+        "numpy>=1.12.0", # Optimized einsums added in this version
         "meshio>=3.3.0",
         "matplotlib>=3.1.1",
         # 'mayavi>=4.6.0',

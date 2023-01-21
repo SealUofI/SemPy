@@ -4,5 +4,5 @@ meshio
 numpy>=1.12.0
 pyopencl
 pytest
-scipy
+scipy>=1.8
 setuptools
