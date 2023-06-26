@@ -6,3 +6,4 @@ pyopencl
 pytest
 scipy>=1.8
 setuptools
+mpi4py

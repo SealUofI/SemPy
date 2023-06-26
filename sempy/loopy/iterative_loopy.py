@@ -29,7 +29,6 @@ queue = cl.CommandQueue(ctx)
 
 
 def cg(A, b, tol=1e-12, maxit=100, verbose=0):
-
     assert b.ndim == 1
 
     m, n = A.shape

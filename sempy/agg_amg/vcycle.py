@@ -44,7 +44,7 @@ def vcycle(rhs, A, level, J0, verbose=0):
             J = J0.copy()
         else:
             n_half = n / 2
-            I = sp.eye(n_half) # noqa
+            I = sp.eye(n_half)  # noqa
             e2 = np.ones((2, 1))
             J = sp.kron(I, e2, format="csc")
 
