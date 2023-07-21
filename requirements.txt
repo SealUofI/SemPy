@@ -4,6 +4,7 @@ meshio
 numpy>=1.12.0
 pyopencl
 pytest
+pytools
 scipy
 setuptools
 mpi4py
