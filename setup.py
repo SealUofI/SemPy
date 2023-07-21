@@ -15,5 +15,6 @@ setup(
         "matplotlib>=3.1.1",
         # 'mayavi>=4.6.0',
         "pytest>=5.2.2",
+        "pytools",
     ],
 )
