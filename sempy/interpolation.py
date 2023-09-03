@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def lagrange(x_out, x_in):
+def lagrange(x_out, x_in, dtype=np.float64):
     assert x_out.ndim == x_in.ndim == 1
 
     n_out = x_out.size
@@ -15,7 +15,7 @@ def lagrange(x_out, x_in):
             a[i] = a[i] * (x_in[i] - x_in[j])
     a = 1.0 / a
 
-    J = np.zeros((n_out, n_in), dtype=np.float64)
+    J = np.zeros((n_out, n_in), dtype=dtype)
     s = np.ones((n_in,), dtype=np.float128)
     t = np.ones((n_in,), dtype=np.float128)
 
