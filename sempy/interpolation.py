@@ -7,7 +7,7 @@ def lagrange(x_out, x_in, dtype=np.float64):
     n_out = x_out.size
     n_in = x_in.size
 
-    a = np.ones((n_in,), dtype=np.float128)
+    a = np.ones((n_in,), dtype=np.longdouble)
     for i in range(n_in):
         for j in range(i):
             a[i] = a[i] * (x_in[i] - x_in[j])
@@ -16,8 +16,8 @@ def lagrange(x_out, x_in, dtype=np.float64):
     a = 1.0 / a
 
     J = np.zeros((n_out, n_in), dtype=dtype)
-    s = np.ones((n_in,), dtype=np.float128)
-    t = np.ones((n_in,), dtype=np.float128)
+    s = np.ones((n_in,), dtype=np.longdouble)
+    t = np.ones((n_in,), dtype=np.longdouble)
 
     for i in range(n_out):
         x = x_out[i]
