@@ -1,7 +1,7 @@
 import numpy as np
 from pytools import memoize
 
-@memoize
+#@memoize
 def lagrange(x_out, x_in):
     assert x_out.ndim == x_in.ndim == 1
 
